@@ -395,7 +395,7 @@ export default function PaidReceiptReviewScreen() {
 
             <TouchableOpacity
               style={styles.reportPrivatelyBtn}
-              onPress={() => router.push('/negotiation')}
+              onPress={() => router.push('/reports' as any)}
               activeOpacity={0.7}
             >
               <Text style={styles.reportPrivatelyText}>

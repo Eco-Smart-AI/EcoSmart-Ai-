@@ -25,7 +25,12 @@ export const BottomNavBar: React.FC<Props> = ({ activeTab }) => {
       pathname.includes('/chat')
     ) {
       current = 'requests';
-    } else if (pathname.includes('/messages') || pathname.includes('/profile')) {
+    } else if (
+      pathname.includes('/messages') ||
+      pathname.includes('/profile') ||
+      pathname.includes('/reports') ||
+      pathname.includes('/mina')
+    ) {
       current = 'profile';
     } else {
       current = 'home';

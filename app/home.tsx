@@ -404,7 +404,10 @@ export default function HomeScreen() {
 
               <TouchableOpacity
                 style={styles.minaTryItBtn}
-                onPress={() => setMinaModalVisible(false)}
+                onPress={() => {
+                  setMinaModalVisible(false);
+                  router.push('/mina' as any);
+                }}
                 activeOpacity={0.85}
               >
                 <Text style={styles.minaTryItText}>{t('home.tryIt')}</Text>

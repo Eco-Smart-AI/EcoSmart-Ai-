@@ -250,7 +250,7 @@ export default function WalletScreen() {
 
             <TouchableOpacity
               style={styles.askMinaBar}
-              onPress={() => alert('Mina AI: Cash outs to OPay arrive in under 2 minutes with zero fees during the Kubwa pilot!')}
+              onPress={() => router.push('/mina' as any)}
               activeOpacity={0.8}
             >
               <Sparkles size={15} color="#2D6A2E" />

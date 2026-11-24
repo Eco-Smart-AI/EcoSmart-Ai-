@@ -183,7 +183,7 @@ export default function ProfileScreen() {
 
               <TouchableOpacity
                 style={styles.menuRow}
-                onPress={() => router.push('/messages')}
+                onPress={() => router.push('/reports' as any)}
               >
                 <HelpCircle size={18} color="#475569" />
                 <Text style={styles.menuLabel}>Help and support</Text>
@@ -194,7 +194,7 @@ export default function ProfileScreen() {
 
               <TouchableOpacity
                 style={styles.menuRow}
-                onPress={() => router.push('/negotiation')}
+                onPress={() => router.push('/reports' as any)}
               >
                 <ShieldAlert size={18} color="#475569" />
                 <Text style={styles.menuLabel}>My reports</Text>
