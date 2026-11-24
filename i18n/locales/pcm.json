@@ -1,0 +1,233 @@
+{
+  "common": {
+    "appName": "EcoSmart AI",
+    "signIn": "Sign in",
+    "getStarted": "Start now",
+    "done": "Done"
+  },
+  "landing": {
+    "badge": "🌱 AI recycling · E don dey live for Kubwa",
+    "heroTitle": "Your dirty waste\nget good price.",
+    "heroSubtitle": "Scan am. Sabi wetin e cost. Make verified recycler near you pay you sharp sharp.",
+    "seeHowItWorks": "See how e dey work →",
+    "scanPreview": {
+      "url": "ecosmart.ai/scan-result",
+      "scanResult": "Scan result",
+      "identified": "✓ We don see am",
+      "plasticBottle": "Plastic bottle",
+      "pet": "PET",
+      "recyclable": "Fit recycle",
+      "worthAbout": "E worth reach",
+      "priceRange": "₦120–150/kg",
+      "recyclersNearYou": "Recycler wey near you",
+      "matchedCount": "3 ready",
+      "findRecycler": "Find recycler wey near you →"
+    },
+    "metrics": {
+      "kubwa": "Kubwa",
+      "kubwaSub": "Pilot area, Abuja",
+      "free": "₦0",
+      "freeSub": "Free to join",
+      "verified": "100%",
+      "verifiedSub": "Recyclers ID check complete",
+      "escrow": "Escrow",
+      "escrowSub": "Your money dey safe"
+    },
+    "audience": {
+      "title": "E dey made for everybody",
+      "householdsTitle": "For households",
+      "householdsSub": "Scan your waste, book pickup, collect your cash.",
+      "recyclersTitle": "For recyclers",
+      "recyclersSub": "Find waste near you, carry pickup, grow business."
+    },
+    "howItWorks": {
+      "title": "How e dey work",
+      "step1Title": "Snap or upload your waste",
+      "step1Sub": "Take photo. We go tell you wetin e be.",
+      "step2Title": "Get instant price",
+      "step2Sub": "See wetin e worth and who wan buy am near you.",
+      "step3Title": "Recycle make you earn",
+      "step3Sub": "Verified recycler go weigh am pay your wallet."
+    },
+    "aiFeatures": {
+      "title": "AI dey power am",
+      "wasteId": "Waste ID",
+      "materialType": "Material type",
+      "valueEstimate": "Price estimate",
+      "recyclerMatch": "Recycler match",
+      "pickupScheduling": "Pickup booking",
+      "aiAssistant": "AI assistant"
+    },
+    "mina": {
+      "tag": "24/7 AI assistant",
+      "title": "Ask Mina",
+      "desc": "Mina dey answer questions, know wetin fit recycle, explain prices and guide your pickup."
+    },
+    "testimonial": {
+      "quote": "I no know say my old plastic bottles and newspaper get money like this. Just Sunday clean-up fetch me ₦6,400 for wallet.",
+      "name": "Adaeze O.",
+      "meta": "Household · Kubwa"
+    },
+    "ctaBanner": {
+      "title": "You ready to turn waste to money?",
+      "subtitle": "Join families and recyclers for Kubwa to make our town clean."
+    },
+    "footer": {
+      "terms": "Terms",
+      "privacy": "Privacy",
+      "help": "Help",
+      "contact": "Contact",
+      "copyright": "© 2026 EcoSmart AI and Innovation Ltd. All rights reserved."
+    }
+  },
+  "chooseAccount": {
+    "title": "Welcome to EcoSmart AI",
+    "subtitle": "Choose wetin describe you well well",
+    "iam": "I be…",
+    "householdTitle": "Household",
+    "householdDesc": "Homes, shops and offices. Scan waste, book pickups and get paid.",
+    "recyclerTitle": "Recycler",
+    "recyclerDesc": "Collectors and companies. Find waste, manage pickups and grow.",
+    "alreadyHaveAccount": "You get account before?",
+    "signIn": "Sign in",
+    "freeToJoin": "Free to join",
+    "moneyProtected": "Money dey safe",
+    "verifiedRecyclers": "Verified recyclers"
+  },
+  "signUp": {
+    "title": "Create your account",
+    "subtitle": "Turn your dirty waste to money sharp sharp.",
+    "signingUpAs": "You dey register as household",
+    "change": "Change",
+    "fullName": "Full name",
+    "fullNamePlaceholder": "Write your full name",
+    "phone": "Phone number",
+    "phoneHelper": "We go text code enter this number.",
+    "email": "Email",
+    "optional": "If you want",
+    "emailPlaceholder": "For receipts, e.g. name@gmail.com",
+    "password": "Password",
+    "passwordPlaceholder": "Create your password",
+    "confirmPassword": "Confirm password",
+    "confirmPasswordPlaceholder": "Type am again",
+    "agreeText": "I agree to the",
+    "terms": "Terms",
+    "and": "and",
+    "privacyPolicy": "Privacy policy",
+    "createAccount": "Create account",
+    "orContinueWith": "Or continue with",
+    "google": "Google",
+    "apple": "Apple",
+    "alreadyHaveAccount": "You get account before?",
+    "signIn": "Sign in"
+  },
+  "verifyPhone": {
+    "back": "Back",
+    "codeSent": "We don send code enter {{phone}}",
+    "wrongCode": "That code no correct or e don expire. Try again or resend am.",
+    "title": "Verify your account",
+    "subtitle": "We send 6-digit code with SMS enter",
+    "changeNumber": "Change number",
+    "autoCheckHelper": "We go check am once you type the last number.",
+    "verifyCode": "Verify code",
+    "didntGetIt": "You no see am?",
+    "resendIn": "Resend for {{timer}}",
+    "resendCode": "Resend code",
+    "callInstead": "Call me give me the code"
+  },
+  "accountVerified": {
+    "title": "Account don verify!",
+    "subtitle": "Your phone number don confirm well well.",
+    "settingUp": "We dey set up your profile…"
+  },
+  "signIn": {
+    "title": "Welcome back",
+    "subtitle": "Sign in make you manage your recycling.",
+    "phoneOrEmail": "Phone number or email",
+    "password": "Password",
+    "forgotPassword": "You forget password?",
+    "wrongPasswordError": "Phone number or password no correct. Try again or reset your password.",
+    "signInBtn": "Sign in",
+    "orContinueWith": "Or continue with",
+    "newToEcoSmart": "You dey new for EcoSmart?",
+    "createAccount": "Open account"
+  },
+  "forgotPassword": {
+    "backToSignIn": "Back to sign in",
+    "title": "You forget password?",
+    "subtitle": "No worry yourself. We go send you code to reset am.",
+    "phoneTab": "Phone",
+    "emailTab": "Email",
+    "phoneLabel": "Phone number",
+    "phoneHelper": "We go text 6-digit code enter this number.",
+    "emailLabel": "Email address",
+    "emailPlaceholder": "Enter your registered email",
+    "notFoundError": "No account get this number. Check am or register new one.",
+    "sendCode": "Send code",
+    "rememberPassword": "You remember your password?",
+    "signIn": "Sign in"
+  },
+  "resetCode": {
+    "back": "Back",
+    "codeSent": "Code don enter {{phone}}",
+    "title": "Enter reset code",
+    "subtitle": "We send 6-digit code with SMS enter {{phone}}.",
+    "verifyCode": "Verify code",
+    "didntGetIt": "You no see am?",
+    "resendIn": "Resend for {{timer}}",
+    "resendCode": "Resend code",
+    "callInstead": "Call me give me the code"
+  },
+  "setNewPassword": {
+    "backToSignIn": "Back to sign in",
+    "title": "Set new password",
+    "subtitle": "Pick password wey you never use here before.",
+    "newPassword": "New password",
+    "strong": "E Strong",
+    "req1": "Reach at least 8 characters",
+    "req2": "One capital letter",
+    "req3": "One number or symbol",
+    "confirmNewPassword": "Confirm new password",
+    "saveNewPassword": "Save new password"
+  },
+  "passwordResetSuccess": {
+    "title": "Password change finish!",
+    "subtitle": "We don change your password successfully.",
+    "redirecting": "We dey carry you go sign in…"
+  },
+  "home": {
+    "goodMorning": "Good morning, Musa",
+    "welcome": "Welcome, Musa",
+    "location": "Kubwa, Abuja",
+    "available": "Available",
+    "onHold": "On hold",
+    "paidAfterPickup": "Paid after pickup",
+    "nothingOnHold": "Nothing on hold yet",
+    "earnedSoFar": "Money wey you don make",
+    "fromPickups": "From 4 pickups",
+    "sellFirstItem": "Sell your first waste",
+    "cashOut": "Cash out",
+    "pickupToday": "Pickup today 10:00–11:00",
+    "hubComing": "Kubwa Green Hub dey come",
+    "petBottles": "PET bottles · ~3 kg",
+    "viewPickup": "View pickup",
+    "startScanning": "Start by scanning your waste",
+    "startScanningSub": "Snap photo. We go tell you wetin e be and how much recyclers dey pay.",
+    "scanMyWaste": "Scan my waste",
+    "scanWaste": "Scan waste",
+    "findRecyclers": "Find recyclers",
+    "buyersWant": "Wetin buyers want",
+    "recycledSoFar": "9.6 kg waste don recycle",
+    "keepItUp": "From 4 pickups · keep am up",
+    "recentActivity": "Recent activity",
+    "seeAll": "See all",
+    "meetMinaTitle": "Meet Mina 👋",
+    "meetMinaDesc": "Ask me anything about recycling, prices or your money. You fit type or speak.",
+    "notNow": "Not now",
+    "tryIt": "Try am"
+  },
+  "languageSheet": {
+    "title": "Choose language",
+    "subtitle": "You fit change am anytime for Settings."
+  }
+}

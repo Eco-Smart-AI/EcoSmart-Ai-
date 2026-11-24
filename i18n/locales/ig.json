@@ -1,0 +1,233 @@
+{
+  "common": {
+    "appName": "EcoSmart AI",
+    "signIn": "Banye",
+    "getStarted": "Malite ugbu a",
+    "done": "Emela"
+  },
+  "landing": {
+    "badge": "🌱 AI na-emegharị ihe · Dị na Kubwa ugbu a",
+    "heroTitle": "Ihe mkpofu gị nwere\nọnụ ahịa.",
+    "heroSubtitle": "Nyochaa ya. Mara ọnụ ahịa ya. Nweta ego site n'aka onye na-azụ ihe mkpofu nọ gị nso.",
+    "seeHowItWorks": "Lee otú o si arụ ọrụ →",
+    "scanPreview": {
+      "url": "ecosmart.ai/scan-result",
+      "scanResult": "Nsonaazụ nyocha",
+      "identified": "✓ Achọpụtara",
+      "plasticBottle": "Karama rọba",
+      "pet": "PET",
+      "recyclable": "Enwere ike imegharị",
+      "worthAbout": "Ọnụ ahịa ya ruru",
+      "priceRange": "₦120–150/kg",
+      "recyclersNearYou": "Ndị na-azụ ahịa nọ gị nso",
+      "matchedCount": "3 dabara",
+      "findRecycler": "Chọta onye na-azụ ihe nọ nso →"
+    },
+    "metrics": {
+      "kubwa": "Kubwa",
+      "kubwaSub": "Ebe nnwale, Abuja",
+      "free": "₦0",
+      "freeSub": "Ịbanye n'efu",
+      "verified": "100%",
+      "verifiedSub": "Enyochala ID ndị na-azụ",
+      "escrow": "Nchedo Escrow",
+      "escrowSub": "Ego gị nọ na nchekwa"
+    },
+    "audience": {
+      "title": "Emere ya maka onye ọ bụla",
+      "householdsTitle": "Maka ezinụlọ",
+      "householdsSub": "Nyochaa ihe mkpofu gị, dọọ oge iburu ya, nweta ego.",
+      "recyclersTitle": "Maka ndị na-emegharị ihe",
+      "recyclersSub": "Chọta ihe mkpofu nọ gị nso, jikwaa iburu ya, mee ka azụmahịa gị too."
+    },
+    "howItWorks": {
+      "title": "Otú o si arụ ọrụ",
+      "step1Title": "Nyochaa ma ọ bụ bulite ihe mkpofu gị",
+      "step1Sub": "See foto. Anyị ga-agwa gị ihe ọ bụ.",
+      "step2Title": "Nweta ọnụ ahịa ozugbo",
+      "step2Sub": "Hụ ihe ọ bara na onye na-azụ ya nọ gị nso.",
+      "step3Title": "Megharịa ma nweta ego",
+      "step3Sub": "Onye na-azụ ihe a kwadoro ga-atụ ya n'oghere ma kwụọ ụgwọ n'akpa ego gị."
+    },
+    "aiFeatures": {
+      "title": "Ike nke AI",
+      "wasteId": "Nchọpụta Ihe Mkpofu",
+      "materialType": "Ụdị Ngwaahịa",
+      "valueEstimate": "Ntụle Ọnụ Ahịa",
+      "recyclerMatch": "Njikọ Onye Ịzụ",
+      "pickupScheduling": "Nhazi Oge Iburu",
+      "aiAssistant": "Onye Enyemaka AI"
+    },
+    "mina": {
+      "tag": "24/7 Onye enyemaka AI",
+      "title": "Jụọ Mina",
+      "desc": "Mina na-aza ajụjụ, na-achọpụta ihe a ga-emegharị, na-akọwa ọnụ ahịa ma na-eduzi iburu ihe mkpofu gị."
+    },
+    "testimonial": {
+      "quote": "Amaghị m na karama ochie m na akwụkwọ akụkọ m bara ego otú a. Ịsacha ụlọ nke ụbọchị Sọnde ghọrọ ₦6,400 n'akpa ego m.",
+      "name": "Adaeze O.",
+      "meta": "Ezinụlọ · Kubwa"
+    },
+    "ctaBanner": {
+      "title": "Ị dịla njikere ịgbanwe ihe mkpofu ka ọ bụrụ ego?",
+      "subtitle": "Sonyere ezinụlọ na ndị na-emegharị ihe na Kubwa na-ewu obodo dị ọcha."
+    },
+    "footer": {
+      "terms": "Usoro",
+      "privacy": "Nzuzo",
+      "help": "Enyemaka",
+      "contact": "Kpọtụrụ anyị",
+      "copyright": "© 2026 EcoSmart AI and Innovation Ltd. Ikike niile echekwabara."
+    }
+  },
+  "chooseAccount": {
+    "title": "Nnọọ na EcoSmart AI",
+    "subtitle": "Họrọ nhọrọ kacha kọwaa gị",
+    "iam": "Abụ m…",
+    "householdTitle": "Ezinụlọ",
+    "householdDesc": "Ụlọ, ụlọ ahịa na ọfịs. Nyochaa ihe mkpofu, dọọ oge iburu ya ma nweta ego.",
+    "recyclerTitle": "Onye Na-emegharị Ihe",
+    "recyclerDesc": "Ndị na-achịkọta ihe na ụlọ ọrụ. Chọta ihe mkpofu, jikwaa iburu ya ma too.",
+    "alreadyHaveAccount": "Ị nwere akaụntụ ugbua?",
+    "signIn": "Banye",
+    "freeToJoin": "Ịbanye n'efu",
+    "moneyProtected": "Ego nọ na nchekwa",
+    "verifiedRecyclers": "Ndị a kwadoro"
+  },
+  "signUp": {
+    "title": "Mepụta akaụntụ gị",
+    "subtitle": "Gbanwee ihe mkpofu gị ka ọ bụrụ ego ngwa ngwa.",
+    "signingUpAs": "Ịdebanye aha dịka ezinụlọ",
+    "change": "Gbanwee",
+    "fullName": "Aha zuru ezu",
+    "fullNamePlaceholder": "Tinye aha gị zuru ezu",
+    "phone": "Nọmba ekwentị",
+    "phoneHelper": "Anyị ga-ezitere koodu na nọmba a.",
+    "email": "Email",
+    "optional": "Nhọrọ",
+    "emailPlaceholder": "Maka nnata ego, d.g. name@gmail.com",
+    "password": "Okwuntughe",
+    "passwordPlaceholder": "Mepụta okwuntughe",
+    "confirmPassword": "Kwenye okwuntughe",
+    "confirmPasswordPlaceholder": "Pịnye ya ọzọ",
+    "agreeText": "Ekwenyere m na",
+    "terms": "Usoro",
+    "and": "na",
+    "privacyPolicy": "Iwu Nzuzo",
+    "createAccount": "Mepụta akaụntụ",
+    "orContinueWith": "Ma ọ bụ gaa n'ihu na",
+    "google": "Google",
+    "apple": "Apple",
+    "alreadyHaveAccount": "Ị nwere akaụntụ ugbua?",
+    "signIn": "Banye"
+  },
+  "verifyPhone": {
+    "back": "Laghachi",
+    "codeSent": "E zigara koodu na {{phone}}",
+    "wrongCode": "Koodu ahụ ezighi ezi ma ọ bụ kubiela. Nwaa ọzọ ma ọ bụ zigharịa.",
+    "title": "Nyochaa akaụntụ gị",
+    "subtitle": "Anyị zigara koodu ọnụọgụ 6 site na SMS gaa",
+    "changeNumber": "Gbanwee nọmba",
+    "autoCheckHelper": "Anyị ga-enyocha ya ozugbo ị pịnyere nọmba ikpeazụ.",
+    "verifyCode": "Nyochaa koodu",
+    "didntGetIt": "Ị nwetaghị ya?",
+    "resendIn": "Zigharịa na {{timer}}",
+    "resendCode": "Zigharịa koodu",
+    "callInstead": "Kpọọ m na koodu kama"
+  },
+  "accountVerified": {
+    "title": "A nyochaala akaụntụ!",
+    "subtitle": "A kwadoro nọmba ekwentị gị.",
+    "settingUp": "Na-ahazi profaịlụ gị…"
+  },
+  "signIn": {
+    "title": "Nnọọ ọzọ",
+    "subtitle": "Banye iji jikwaa imegharị ihe gị.",
+    "phoneOrEmail": "Nọmba ekwentị ma ọ bụ ozi-e",
+    "password": "Okwuntughe",
+    "forgotPassword": "Chezọrọ okwuntughe?",
+    "wrongPasswordError": "Nọmba ekwentị ma ọ bụ okwuntughe ezighi ezi. Nwaa ọzọ ma ọ bụ tọgharịa okwuntughe gị.",
+    "signInBtn": "Banye",
+    "orContinueWith": "Ma ọ bụ gaa n'ihu na",
+    "newToEcoSmart": "Ọhụrụ na EcoSmart?",
+    "createAccount": "Mepụta akaụntụ"
+  },
+  "forgotPassword": {
+    "backToSignIn": "Laghachi na ịbanye",
+    "title": "Chezọrọ okwuntughe?",
+    "subtitle": "Echegbula onwe gị. Anyị ga-ezitere gị koodu iji tọgharịa ya.",
+    "phoneTab": "Ekwentị",
+    "emailTab": "Ozi-e",
+    "phoneLabel": "Nọmba ekwentị",
+    "phoneHelper": "Anyị ga-ezitere koodu ọnụọgụ 6 na nọmba a.",
+    "emailLabel": "Adreesị ozi-e",
+    "emailPlaceholder": "Tinye ozi-e edebanyere aha",
+    "notFoundError": "Ọ nweghị akaụntụ na-eji nọmba a. Lelee ya ma ọ bụ mepụta akaụntụ.",
+    "sendCode": "Ziga koodu",
+    "rememberPassword": "Chetaara okwuntughe gị?",
+    "signIn": "Banye"
+  },
+  "resetCode": {
+    "back": "Laghachi",
+    "codeSent": "E zigara koodu na {{phone}}",
+    "title": "Tinye koodu ntọgharị",
+    "subtitle": "Anyị zigara koodu ọnụọgụ 6 site na SMS gaa na {{phone}}.",
+    "verifyCode": "Nyochaa koodu",
+    "didntGetIt": "Ị nwetaghị ya?",
+    "resendIn": "Zigharịa na {{timer}}",
+    "resendCode": "Zigharịa koodu",
+    "callInstead": "Kpọọ m na koodu kama"
+  },
+  "setNewPassword": {
+    "backToSignIn": "Laghachi na ịbanye",
+    "title": "Tọọ okwuntughe ọhụrụ",
+    "subtitle": "Họrọ nke ị na-ejitụbeghị ebe a mbụ.",
+    "newPassword": "Okwuntughe ọhụrụ",
+    "strong": "Ike",
+    "req1": "Opekata mpe mkpụrụedemede 8",
+    "req2": "Otu mkpụrụedemede ukwu",
+    "req3": "Otu nọmba ma ọ bụ akara",
+    "confirmNewPassword": "Kwenye okwuntughe ọhụrụ",
+    "saveNewPassword": "Chekwaa okwuntughe ọhụrụ"
+  },
+  "passwordResetSuccess": {
+    "title": "Ntọgharị okwuntughe gara nke ọma!",
+    "subtitle": "A gbanweela okwuntughe gị.",
+    "redirecting": "Na-atụgharị gaa na ịbanye…"
+  },
+  "home": {
+    "goodMorning": "Ụtụtụ ọma, Musa",
+    "welcome": "Nnọọ, Musa",
+    "location": "Kubwa, Abuja",
+    "available": "Dị",
+    "onHold": "Nọ na njide",
+    "paidAfterPickup": "A ga-akwụ mgbe e buru ya",
+    "nothingOnHold": "Ọ dịghị ihe nọ na njide ugbu a",
+    "earnedSoFar": "Ego enwetara ugbu a",
+    "fromPickups": "Site na iburu ihe 4",
+    "sellFirstItem": "Ree ihe mbụ gị",
+    "cashOut": "Wepụta ego",
+    "pickupToday": "Iburu ihe taa 10:00–11:00",
+    "hubComing": "Kubwa Green Hub na-abịa",
+    "petBottles": "Karama PET · ~3 kg",
+    "viewPickup": "Lelee iburu ihe",
+    "startScanning": "Bido site na inyocha ihe mkpofu gị",
+    "startScanningSub": "See foto. Anyị ga-agwa gị ihe ọ bụ na ihe ndị na-azụ na-akwụ.",
+    "scanMyWaste": "Nyochaa ihe mkpofu m",
+    "scanWaste": "Nyochaa ihe mkpofu",
+    "findRecyclers": "Chọta ndị na-azụ",
+    "buyersWant": "Ndị na-azụ chọrọ",
+    "recycledSoFar": "9.6 kg e megharịrị ugbu a",
+    "keepItUp": "Site na iburu ihe 4 · gaa n'ihu",
+    "recentActivity": "Ihe emere n'oge na-adịbeghị anya",
+    "seeAll": "Lee ihe niile",
+    "meetMinaTitle": "Zute Mina 👋",
+    "meetMinaDesc": "Jụọ m ihe ọ bụla gbasara imegharị ihe, ọnụ ahịa ma ọ bụ ego gị. Ị nwere ike pịnye ma ọ bụ kwuo okwu.",
+    "notNow": "Ọ bụghị ugbu a",
+    "tryIt": "Nwalee ya"
+  },
+  "languageSheet": {
+    "title": "Họrọ asụsụ",
+    "subtitle": "Ị nwere ike ịgbanwe ya n'oge ọ bụla na Ntọala."
+  }
+}

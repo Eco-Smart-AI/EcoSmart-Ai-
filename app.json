@@ -1,0 +1,28 @@
+{
+  "expo": {
+    "name": "EcoSmart AI",
+    "slug": "ecosmart-ai",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "scheme": "ecosmart",
+    "splash": {
+      "backgroundColor": "#1A431E"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#1A431E"
+      }
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static"
+    },
+    "plugins": [
+      "expo-router"
+    ]
+  }
+}

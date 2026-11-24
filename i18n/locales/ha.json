@@ -1,0 +1,233 @@
+{
+  "common": {
+    "appName": "EcoSmart AI",
+    "signIn": "Shiga ciki",
+    "getStarted": "Fara yanzu",
+    "done": "An gama"
+  },
+  "landing": {
+    "badge": "🌱 AI-powered recycling · A Kubwa yanzu",
+    "heroTitle": "Sharan ku yana da\nfarashi.",
+    "heroSubtitle": "Duba shi. San darajarsa. Karɓi kuɗi daga mai sake amfani da shara kusa da kai.",
+    "seeHowItWorks": "Duba yadda yake aiki →",
+    "scanPreview": {
+      "url": "ecosmart.ai/scan-result",
+      "scanResult": "Sakamakon bincike",
+      "identified": "✓ An gano",
+      "plasticBottle": "Kwalbar roba",
+      "pet": "PET",
+      "recyclable": "Ana sake amfani da shi",
+      "worthAbout": "Kimanin daraja",
+      "priceRange": "₦120–150/kg",
+      "recyclersNearYou": "Masu siye kusa da ku",
+      "matchedCount": "3 sun dace",
+      "findRecycler": "Nemi mai siye kusa da ku →"
+    },
+    "metrics": {
+      "kubwa": "Kubwa",
+      "kubwaSub": "Yankin gwaji, Abuja",
+      "free": "₦0",
+      "freeSub": "Shiga kyauta",
+      "verified": "100%",
+      "verifiedSub": "An tantance masu siye",
+      "escrow": "Kariyar Escrow",
+      "escrowSub": "Kudin ku a amince"
+    },
+    "audience": {
+      "title": "An gina shi ga kowa",
+      "householdsTitle": "Ga gidaje",
+      "householdsSub": "Duba sharan ku, shirya dauka, sami kudi.",
+      "recyclersTitle": "Ga masu siyen shara",
+      "recyclersSub": "Nemo shara kusa da ku, gudanar da aiki, bunkasa kasuwanci."
+    },
+    "howItWorks": {
+      "title": "Yadda yake aiki",
+      "step1Title": "Duba ko dora sharan ku",
+      "step1Sub": "Dauki hoto. Za mu fada muku menene.",
+      "step2Title": "Sami farashin nan take",
+      "step2Sub": "Duba darajarsa da wanda zai saya kusa da ku.",
+      "step3Title": "Sake amfani da shi kuma sami riba",
+      "step3Sub": "Kwararren mai siye zai auna shi kuma ya biya walat dinku."
+    },
+    "aiFeatures": {
+      "title": "Karfin AI",
+      "wasteId": "Gano Shara",
+      "materialType": "Nau'in Abu",
+      "valueEstimate": "Kimanin Farashi",
+      "recyclerMatch": "Daidaita Mai Siye",
+      "pickupScheduling": "Tsara Dauka",
+      "aiAssistant": "Mataimakin AI"
+    },
+    "mina": {
+      "tag": "Mataimakiyar AI 24/7",
+      "title": "Tambayi Mina",
+      "desc": "Mina tana amsa tambayoyi, gano abubuwan sake amfani, bayyana farashi da jagorantar kwashe shara."
+    },
+    "testimonial": {
+      "quote": "Ban taba sanin tsofaffin kwalabe da jaridu suna da kudi haka ba. Tsaftar ranar Lahadi ta zama ₦6,400 a cikin walat dina.",
+      "name": "Adaeze O.",
+      "meta": "Gida · Kubwa"
+    },
+    "ctaBanner": {
+      "title": "Kuna shirye don mayar da shara zuwa kudi?",
+      "subtitle": "Ku shiga tare da gidaje da masu siye a Kubwa don gina birni mai tsabta."
+    },
+    "footer": {
+      "terms": "Ka'idoji",
+      "privacy": "Sirri",
+      "help": "Taimako",
+      "contact": "Tuntuba",
+      "copyright": "© 2026 EcoSmart AI and Innovation Ltd. Dukkan hakkoki an kiyaye su."
+    }
+  },
+  "chooseAccount": {
+    "title": "Barka da zuwa EcoSmart AI",
+    "subtitle": "Zabi wanda ya fi dacewa da kai",
+    "iam": "Ni ne…",
+    "householdTitle": "Gida",
+    "householdDesc": "Gidaje, shaguna da ofisoshi. Duba shara, shirya dauka kuma a biya ku.",
+    "recyclerTitle": "Mai Siye",
+    "recyclerDesc": "Masu tattarawa da kamfanoni. Nemo shara, sarrafa kwashewa kuma ku bunkasa.",
+    "alreadyHaveAccount": "Kuna da asusu?",
+    "signIn": "Shiga ciki",
+    "freeToJoin": "Shiga kyauta",
+    "moneyProtected": "Kudi a kiyaye",
+    "verifiedRecyclers": "Masu siye da aka tantance"
+  },
+  "signUp": {
+    "title": "Bude asusunka",
+    "subtitle": "Mayar da sharan ku zuwa kudi a cikin sauki.",
+    "signingUpAs": "Yin rajista a matsayin gida",
+    "change": "Canza",
+    "fullName": "Cikakken suna",
+    "fullNamePlaceholder": "Shigar da cikakken sunanka",
+    "phone": "Lambar waya",
+    "phoneHelper": "Za mu tura lamba zuwa wannan lambar.",
+    "email": "Imel",
+    "optional": "Na zaɓi",
+    "emailPlaceholder": "Don rasit, misali: name@gmail.com",
+    "password": "Kalmar sirri",
+    "passwordPlaceholder": "Kirkiri kalmar sirri",
+    "confirmPassword": "Tabbatar da kalmar sirri",
+    "confirmPasswordPlaceholder": "Sake rubuta ta",
+    "agreeText": "Na amince da",
+    "terms": "Ka'idoji",
+    "and": "da",
+    "privacyPolicy": "Manufar Sirri",
+    "createAccount": "Bude asusu",
+    "orContinueWith": "Ko ci gaba da",
+    "google": "Google",
+    "apple": "Apple",
+    "alreadyHaveAccount": "Kuna da asusu?",
+    "signIn": "Shiga ciki"
+  },
+  "verifyPhone": {
+    "back": "Koma baya",
+    "codeSent": "An tura lamba zuwa {{phone}}",
+    "wrongCode": "Wannan lambar ba daidai ba ce ko ta kare. Sake gwadawa ko sake aikawa.",
+    "title": "Tabbatar da asusunka",
+    "subtitle": "Mun tura lambar sirri ta lambobi 6 ta SMS zuwa",
+    "changeNumber": "Canza lamba",
+    "autoCheckHelper": "Za mu duba shi da zaran ka buga lamba ta karshe.",
+    "verifyCode": "Tabbatar da lambar",
+    "didntGetIt": "Ba ku samu ba?",
+    "resendIn": "Sake aikawa a cikin {{timer}}",
+    "resendCode": "Sake tura lamba",
+    "callInstead": "Kira ni da lambar maimakon haka"
+  },
+  "accountVerified": {
+    "title": "An tabbatar da asusu!",
+    "subtitle": "An tabbatar da lambar wayarku.",
+    "settingUp": "Ana shirya bayananku…"
+  },
+  "signIn": {
+    "title": "Barka da dawowa",
+    "subtitle": "Shiga ciki don gudanar da sake amfani da sharar ku.",
+    "phoneOrEmail": "Lambar waya ko imel",
+    "password": "Kalmar sirri",
+    "forgotPassword": "An manta kalmar sirri?",
+    "wrongPasswordError": "Lambar waya ko kalmar sirri ba daidai ba ne. Sake gwadawa ko sake saita kalmar sirri.",
+    "signInBtn": "Shiga ciki",
+    "orContinueWith": "Ko ci gaba da",
+    "newToEcoSmart": "Sabo ne a EcoSmart?",
+    "createAccount": "Bude asusu"
+  },
+  "forgotPassword": {
+    "backToSignIn": "Koma don shiga",
+    "title": "An manta kalmar sirri?",
+    "subtitle": "Kada ku damu. Za mu tura muku lamba don sake saitawa.",
+    "phoneTab": "Waya",
+    "emailTab": "Imel",
+    "phoneLabel": "Lambar waya",
+    "phoneHelper": "Za mu tura lambar sirri ta lambobi 6 zuwa wannan lambar.",
+    "emailLabel": "Adireshin imel",
+    "emailPlaceholder": "Shigar da rajistar imel din ku",
+    "notFoundError": "Babu asusun da ke amfani da wannan lambar. Duba shi ko bude asusu.",
+    "sendCode": "Tura lamba",
+    "rememberPassword": "Ka tuna kalmar sirrinka?",
+    "signIn": "Shiga ciki"
+  },
+  "resetCode": {
+    "back": "Koma baya",
+    "codeSent": "An tura lamba zuwa {{phone}}",
+    "title": "Shigar da lambar sake saitawa",
+    "subtitle": "Mun tura lambar sirri ta lambobi 6 ta SMS zuwa {{phone}}.",
+    "verifyCode": "Tabbatar da lambar",
+    "didntGetIt": "Ba ku samu ba?",
+    "resendIn": "Sake aikawa a cikin {{timer}}",
+    "resendCode": "Sake tura lamba",
+    "callInstead": "Kira ni da lambar maimakon haka"
+  },
+  "setNewPassword": {
+    "backToSignIn": "Koma don shiga",
+    "title": "Saita sabuwar kalmar sirri",
+    "subtitle": "Zabi wacce ba ka taba amfani da ita a nan ba a baya.",
+    "newPassword": "Sabuwar kalmar sirri",
+    "strong": "Tana da Karfi",
+    "req1": "A kalla haruffa 8",
+    "req2": "Babban harafi daya",
+    "req3": "Lamba ko alama daya",
+    "confirmNewPassword": "Tabbatar da sabuwar kalmar sirri",
+    "saveNewPassword": "Ajiye sabuwar kalmar sirri"
+  },
+  "passwordResetSuccess": {
+    "title": "An sake saita kalmar sirri cikin nasara!",
+    "subtitle": "An canza kalmar sirrinku.",
+    "redirecting": "Ana kai ku shafin shiga ciki…"
+  },
+  "home": {
+    "goodMorning": "Ina kwana, Musa",
+    "welcome": "Barka da zuwa, Musa",
+    "location": "Kubwa, Abuja",
+    "available": "Akwai",
+    "onHold": "A tsare",
+    "paidAfterPickup": "Za a biya bayan an dauka",
+    "nothingOnHold": "Babu komai a tsare yanzu",
+    "earnedSoFar": "Abin da aka samu zuwa yanzu",
+    "fromPickups": "Daga daukar shara 4",
+    "sellFirstItem": "Sayar da abun ku na farko",
+    "cashOut": "Cire kudi",
+    "pickupToday": "Za a dauka yau 10:00–11:00",
+    "hubComing": "Kubwa Green Hub na tafe",
+    "petBottles": "Kwalayen PET · ~3 kg",
+    "viewPickup": "Duba daukar shara",
+    "startScanning": "Fara da duba sharan ku",
+    "startScanningSub": "Dauki hoto. Za mu fada muku menene da kuma abin da masu sake amfani ke biya.",
+    "scanMyWaste": "Duba sharata",
+    "scanWaste": "Duba shara",
+    "findRecyclers": "Nemo masu siye",
+    "buyersWant": "Abin da masu siye ke so",
+    "recycledSoFar": "An sake amfani da kilogiram 9.6",
+    "keepItUp": "Daga daukar shara 4 · ku ci gaba da haka",
+    "recentActivity": "Ayyukan baya-bayan nan",
+    "seeAll": "Duba duka",
+    "meetMinaTitle": "Gaisa da Mina 👋",
+    "meetMinaDesc": "Tambaye ni komai game da sake amfani, farashi ko kudinku. Kuna iya rubutawa ko magana.",
+    "notNow": "Ba yanzu ba",
+    "tryIt": "Gwada shi"
+  },
+  "languageSheet": {
+    "title": "Zabi harshe",
+    "subtitle": "Kuna iya canza shi a kowane lokaci a Saituna."
+  }
+}

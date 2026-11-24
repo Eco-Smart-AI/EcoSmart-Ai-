@@ -1,0 +1,233 @@
+{
+  "common": {
+    "appName": "EcoSmart AI",
+    "signIn": "Wọle",
+    "getStarted": "Bẹrẹ bayi",
+    "done": "O pari"
+  },
+  "landing": {
+    "badge": "🌱 AI atunlo · Ti wa ni Kubwa bayi",
+    "heroTitle": "Idọti rẹ ni\niye owo.",
+    "heroSubtitle": "Ṣayẹwo rẹ. Mọ iye ti o jẹ. Gba owo lati ọdọ alagbata atunlo to wa nitosi rẹ.",
+    "seeHowItWorks": "Wo bi o ṣe n ṣiṣẹ →",
+    "scanPreview": {
+      "url": "ecosmart.ai/scan-result",
+      "scanResult": "Esi ayẹwo",
+      "identified": "✓ Ti mọ",
+      "plasticBottle": "Igo ṣiṣu",
+      "pet": "PET",
+      "recyclable": "Ṣe atunlo",
+      "worthAbout": "Iye to to",
+      "priceRange": "₦120–150/kg",
+      "recyclersNearYou": "Awọn olura nitosi rẹ",
+      "matchedCount": "3 baamu",
+      "findRecycler": "Wa olura ti o wa nitosi →"
+    },
+    "metrics": {
+      "kubwa": "Kubwa",
+      "kubwaSub": "Agbegbe iwadii, Abuja",
+      "free": "₦0",
+      "freeSub": "Ọfẹ lati darapọ",
+      "verified": "100%",
+      "verifiedSub": "Awọn olura ti ni ayẹwo ID",
+      "escrow": "Escrow",
+      "escrowSub": "Owo rẹ wa ni ailewu"
+    },
+    "audience": {
+      "title": "A kọ ọ fun gbogbo eniyan",
+      "householdsTitle": "Fun awọn idile",
+      "householdsSub": "Ṣayẹwo idọti rẹ, ṣe iwe gbigbe, gba owo.",
+      "recyclersTitle": "Fun awọn alagbata atunlo",
+      "recyclersSub": "Wa idọti nitosi rẹ, ṣakoso gbigbe, dagba iṣowo rẹ."
+    },
+    "howItWorks": {
+      "title": "Bi o ṣe n ṣiṣẹ",
+      "step1Title": "Ṣayẹwo tabi gbe idọti rẹ si ori ayelujara",
+      "step1Sub": "Ya aworan. A yoo sọ ohun ti o jẹ fun ọ.",
+      "step2Title": "Gba iye owo lẹsẹkẹsẹ",
+      "step2Sub": "Wo iye ti o jẹ ati ẹniti o n ra nitosi rẹ.",
+      "step3Title": "Tun lo ki o si gba owo",
+      "step3Sub": "Olura ti o ni idaniloju yoo wọn iwọn rẹ yoo si sanwo sinu apo-owo rẹ."
+    },
+    "aiFeatures": {
+      "title": "Agbara nipasẹ AI",
+      "wasteId": "Idanimọ Idọti",
+      "materialType": "Iru Ohun elo",
+      "valueEstimate": "Iṣiro Iye",
+      "recyclerMatch": "Ibaamu Olura",
+      "pickupScheduling": "Eto Gbigbe",
+      "aiAssistant": "Oluranlọwọ AI"
+    },
+    "mina": {
+      "tag": "24/7 Oluranlọwọ AI",
+      "title": "Beere lọwọ Mina",
+      "desc": "Mina dahun awọn ibeere, ṣe idanimọ awọn ohun elo atunlo, ṣalaye awọn idiyele ati ṣe itọsọna awọn gbigbe rẹ."
+    },
+    "testimonial": {
+      "quote": "Emi ko mọ pe awọn igo atijọ ati awọn iwe iroyin mi ni owo bi eyi. Imọtoto ọjọ Aiku kan yipada si ₦6,400 ninu apo-owo mi.",
+      "name": "Adaeze O.",
+      "meta": "Idile · Kubwa"
+    },
+    "ctaBanner": {
+      "title": "Ṣe o ṣetan lati yi idọti pada si owo?",
+      "subtitle": "Darapọ mọ awọn idile ati awọn alagbata atunlo ni Kubwa ti n kọ ilu to mọ."
+    },
+    "footer": {
+      "terms": "Awọn ofin",
+      "privacy": "Aṣiri",
+      "help": "Iranlọwọ",
+      "contact": "Olubasọrọ",
+      "copyright": "© 2026 EcoSmart AI and Innovation Ltd. Gbogbo ẹtọ ni a daabobo."
+    }
+  },
+  "chooseAccount": {
+    "title": "Kaabọ si EcoSmart AI",
+    "subtitle": "Yan aṣayan ti o ṣe apejuwe rẹ julọ",
+    "iam": "Mo jẹ…",
+    "householdTitle": "Idile",
+    "householdDesc": "Awọn ile, awọn ile itaja ati awọn ọfiisi. Ṣayẹwo idọti, ṣe iwe gbigbe ati gba owo.",
+    "recyclerTitle": "Alagbata Atunlo",
+    "recyclerDesc": "Awọn olugba ati awọn ile-iṣẹ. Wa idọti, ṣakoso awọn gbigbe ati dagba.",
+    "alreadyHaveAccount": "Ṣe o ti ni akọọlẹ tẹlẹ?",
+    "signIn": "Wọle",
+    "freeToJoin": "Ọfẹ lati darapọ",
+    "moneyProtected": "Owo wa ni ailewu",
+    "verifiedRecyclers": "Awọn alagbata ti a fọwọsi"
+  },
+  "signUp": {
+    "title": "Ṣẹda akọọlẹ rẹ",
+    "subtitle": "Yi idọti rẹ pada si owo ni awọn igbesẹ diẹ.",
+    "signingUpAs": "Iforukọsilẹ bi idile",
+    "change": "Yipada",
+    "fullName": "Orukọ kikun",
+    "fullNamePlaceholder": "Tẹ orukọ rẹ ni kikun",
+    "phone": "Nọmba foonu",
+    "phoneHelper": "A yoo fi koodu ranṣẹ si nọmba yii.",
+    "email": "Imeeli",
+    "optional": "Iyan",
+    "emailPlaceholder": "Fun iwe-ẹri, apẹẹrẹ name@gmail.com",
+    "password": "Ọrọigbaniwọle",
+    "passwordPlaceholder": "Ṣẹda ọrọigbaniwọle kan",
+    "confirmPassword": "Jẹrisi ọrọigbaniwọle",
+    "confirmPasswordPlaceholder": "Tẹ ẹ lẹẹkansi",
+    "agreeText": "Mo gba si",
+    "terms": "Awọn ofin",
+    "and": "ati",
+    "privacyPolicy": "Eto Aṣiri",
+    "createAccount": "Ṣẹda akọọlẹ",
+    "orContinueWith": "Tabi tẹsiwaju pẹlu",
+    "google": "Google",
+    "apple": "Apple",
+    "alreadyHaveAccount": "Ṣe o ti ni akọọlẹ tẹlẹ?",
+    "signIn": "Wọle"
+  },
+  "verifyPhone": {
+    "back": "Pada",
+    "codeSent": "A fi koodu ranṣẹ si {{phone}}",
+    "wrongCode": "Koodu yẹn ko tọ tabi o ti pari. Gbiyanju lẹẹkansi tabi tun fi ranṣẹ.",
+    "title": "Jẹrisi akọọlẹ rẹ",
+    "subtitle": "A fi koodu oni-nọmba 6 ranṣẹ nipasẹ SMS si",
+    "changeNumber": "Yi nọmba pada",
+    "autoCheckHelper": "A yoo ṣayẹwo rẹ ni kete ti o ba tẹ nọmba to kẹhin.",
+    "verifyCode": "Jẹrisi koodu",
+    "didntGetIt": "Ṣe o ko gba?",
+    "resendIn": "Tun firanṣẹ ni {{timer}}",
+    "resendCode": "Tun koodu ranṣẹ",
+    "callInstead": "Pe mi pẹlu koodu dipo"
+  },
+  "accountVerified": {
+    "title": "A ti jẹrisi akọọlẹ!",
+    "subtitle": "A ti fidi nọmba foonu rẹ mulẹ.",
+    "settingUp": "Nṣeto profaili rẹ…"
+  },
+  "signIn": {
+    "title": "Kaabọ pada",
+    "subtitle": "Wọle lati ṣakoso atunlo rẹ.",
+    "phoneOrEmail": "Nọmba foonu tabi imeeli",
+    "password": "Ọrọigbaniwọle",
+    "forgotPassword": "Gbagbe ọrọigbaniwọle?",
+    "wrongPasswordError": "Nọmba foonu tabi ọrọigbaniwọle ko tọ. Gbiyanju lẹẹkansi tabi tun ọrọigbaniwọle rẹ ṣe.",
+    "signInBtn": "Wọle",
+    "orContinueWith": "Tabi tẹsiwaju pẹlu",
+    "newToEcoSmart": "Ṣe o jẹ tuntun si EcoSmart?",
+    "createAccount": "Ṣẹda akọọlẹ"
+  },
+  "forgotPassword": {
+    "backToSignIn": "Pada si wọle",
+    "title": "Gbagbe ọrọigbaniwọle?",
+    "subtitle": "Maṣe yọ ara rẹ lẹnu. A yoo fi koodu ranṣẹ si ọ lati tunto.",
+    "phoneTab": "Foonu",
+    "emailTab": "Imeeli",
+    "phoneLabel": "Nọmba foonu",
+    "phoneHelper": "A yoo fi koodu oni-nọmba 6 ranṣẹ nipasẹ SMS si nọmba yii.",
+    "emailLabel": "Adirẹsi imeeli",
+    "emailPlaceholder": "Tẹ imeeli ti o forukọsilẹ sii",
+    "notFoundError": "Ko si akọọlẹ ti o nlo nọmba yii. Ṣayẹwo tabi ṣẹda akọọlẹ kan.",
+    "sendCode": "Fi koodu ranṣẹ",
+    "rememberPassword": "Ranti ọrọigbaniwọle rẹ?",
+    "signIn": "Wọle"
+  },
+  "resetCode": {
+    "back": "Pada",
+    "codeSent": "A fi koodu ranṣẹ si {{phone}}",
+    "title": "Tẹ koodu atunto sii",
+    "subtitle": "A fi koodu oni-nọmba 6 ranṣẹ nipasẹ SMS si {{phone}}.",
+    "verifyCode": "Jẹrisi koodu",
+    "didntGetIt": "Ṣe o ko gba?",
+    "resendIn": "Tun firanṣẹ ni {{timer}}",
+    "resendCode": "Tun koodu ranṣẹ",
+    "callInstead": "Pe mi pẹlu koodu dipo"
+  },
+  "setNewPassword": {
+    "backToSignIn": "Pada si wọle",
+    "title": "Ṣeto ọrọigbaniwọle titun",
+    "subtitle": "Yan eyi ti o ko ti lo nihin tẹlẹ.",
+    "newPassword": "Ọrọigbaniwọle titun",
+    "strong": "O lagbara",
+    "req1": "O kere ju awọn ohun kikọ 8",
+    "req2": "Lẹta nla kan",
+    "req3": "Nọmba kan tabi aami",
+    "confirmNewPassword": "Jẹrisi ọrọigbaniwọle titun",
+    "saveNewPassword": "Fi ọrọigbaniwọle titun pamọ"
+  },
+  "passwordResetSuccess": {
+    "title": "Atunto ọrọigbaniwọle ṣaṣeyọri!",
+    "subtitle": "A ti yipada ọrọigbaniwọle rẹ.",
+    "redirecting": "Nṣe atunṣe si wọle…"
+  },
+  "home": {
+    "goodMorning": "E kaaro, Musa",
+    "welcome": "Kaabọ, Musa",
+    "location": "Kubwa, Abuja",
+    "available": "O wa",
+    "onHold": "Ti daduro",
+    "paidAfterPickup": "Ti sanwo lẹhin gbigbe",
+    "nothingOnHold": "Ko si nkan ti a daduro sibẹ",
+    "earnedSoFar": "Owo ti o ti gba",
+    "fromPickups": "Lati awọn gbigbe 4",
+    "sellFirstItem": "Ta nkan akọkọ rẹ",
+    "cashOut": "Gba owo jade",
+    "pickupToday": "Gbigbe loni 10:00–11:00",
+    "hubComing": "Kubwa Green Hub n bọ",
+    "petBottles": "Awọn igo PET · ~3 kg",
+    "viewPickup": "Wo gbigbe",
+    "startScanning": "Bẹrẹ nipa ṣiṣayẹwo idọti rẹ",
+    "startScanningSub": "Ya aworan. A yoo sọ ohun ti o jẹ ati ohun ti awọn alagbata n san.",
+    "scanMyWaste": "Ṣayẹwo idọti mi",
+    "scanWaste": "Ṣayẹwo idọti",
+    "findRecyclers": "Wa awọn alagbata",
+    "buyersWant": "Awọn olura fẹ",
+    "recycledSoFar": "9.6 kg ti a tun lo titi di isisiyi",
+    "keepItUp": "Lati awọn gbigbe 4 · tẹsiwaju",
+    "recentActivity": "Iṣẹ aipẹ",
+    "seeAll": "Wo gbogbo rẹ",
+    "meetMinaTitle": "Pade Mina 👋",
+    "meetMinaDesc": "Beere lọwọ mi ohunkohun nipa atunlo, awọn idiyele tabi owo rẹ. O le tẹ tabi sọrọ.",
+    "notNow": "Kii ṣe nisisiyi",
+    "tryIt": "Gbiyanju rẹ"
+  },
+  "languageSheet": {
+    "title": "Yan ede",
+    "subtitle": "O le yipada nigbakugba ninu Awọn Eto."
+  }
+}

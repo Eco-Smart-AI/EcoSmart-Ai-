@@ -1,0 +1,21 @@
+# Dependencies
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Raw design reference archives (keep repo lightweight)
+Ecosmart Ai And Innovation Ltd (Copy) (1)j/
+Ecosmart Ai And Innovation Ltd (Copy) (3)/
+Ecosmart Ai And Innovation Ltd (Copy) (5)/
+Ecosmart Ai And Innovation Ltd (Copy)11/
+pdfs/
+extracted_designs.txt
+
+# OS & Editor
+.DS_Store
+Thumbs.db
+*.log
