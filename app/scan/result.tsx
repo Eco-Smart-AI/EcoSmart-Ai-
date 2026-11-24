@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   SafeAreaView,
-  Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
@@ -19,18 +18,25 @@ import {
   Edit3,
   Scale,
   Ban,
-  ChevronRight,
+  HelpCircle,
+  Bell,
+  Check,
+  Clock,
+  Sun,
 } from 'lucide-react-native';
 import { AppHeader } from '../../components/common/AppHeader';
 import { BottomNavBar } from '../../components/common/BottomNavBar';
 import { CorrectionSheet, WasteCategory } from '../../components/scan/CorrectionSheet';
 
+type ScanResultMode = 'recyclable' | 'not_sure' | 'not_recyclable' | 'not_collected_yet';
+
 export default function ScanResultScreen() {
   const router = useRouter();
 
-  // State
-  const [isRejectedMode, setIsRejectedMode] = useState(false);
+  // 4 Set-D Result Modes: Recyclable, Not sure, Not recyclable, Not collected yet
+  const [resultMode, setResultMode] = useState<ScanResultMode>('recyclable');
   const [sheetVisible, setSheetVisible] = useState(false);
+  const [notifySubscribed, setNotifySubscribed] = useState(false);
 
   // Dynamic scanned material details
   const [material, setMaterial] = useState<{
@@ -57,6 +63,7 @@ export default function ScanResultScreen() {
       weight: newWeight,
       rate: cat.unitPrice,
     });
+    setResultMode('recyclable');
   };
 
   return (
@@ -65,32 +72,76 @@ export default function ScanResultScreen() {
 
       {/* Demo State Switcher */}
       <View style={styles.demoBar}>
-        <Text style={styles.demoTitle}>Result Mode:</Text>
-        <TouchableOpacity
-          style={[styles.demoPill, !isRejectedMode && styles.demoPillActive]}
-          onPress={() => setIsRejectedMode(false)}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.demoScroll}
         >
-          <Text style={[styles.demoPillText, !isRejectedMode && styles.demoPillTextActive]}>
-            Hard, heavy bottle
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.demoPill, isRejectedMode && styles.demoPillActive]}
-          onPress={() => setIsRejectedMode(true)}
-        >
-          <Text style={[styles.demoPillText, isRejectedMode && styles.demoPillTextActive]}>
-            Not collected
-          </Text>
-        </TouchableOpacity>
+          <Text style={styles.demoTitle}>Scan Result:</Text>
+          <TouchableOpacity
+            style={[styles.demoPill, resultMode === 'recyclable' && styles.demoPillActive]}
+            onPress={() => setResultMode('recyclable')}
+          >
+            <Text
+              style={[
+                styles.demoPillText,
+                resultMode === 'recyclable' && styles.demoPillTextActive,
+              ]}
+            >
+              Recyclable
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.demoPill, resultMode === 'not_sure' && styles.demoPillActive]}
+            onPress={() => setResultMode('not_sure')}
+          >
+            <Text
+              style={[
+                styles.demoPillText,
+                resultMode === 'not_sure' && styles.demoPillTextActive,
+              ]}
+            >
+              Not sure
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.demoPill, resultMode === 'not_recyclable' && styles.demoPillActive]}
+            onPress={() => setResultMode('not_recyclable')}
+          >
+            <Text
+              style={[
+                styles.demoPillText,
+                resultMode === 'not_recyclable' && styles.demoPillTextActive,
+              ]}
+            >
+              Not recyclable
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.demoPill, resultMode === 'not_collected_yet' && styles.demoPillActive]}
+            onPress={() => setResultMode('not_collected_yet')}
+          >
+            <Text
+              style={[
+                styles.demoPillText,
+                resultMode === 'not_collected_yet' && styles.demoPillTextActive,
+              ]}
+            >
+              Not collected yet
+            </Text>
+          </TouchableOpacity>
+        </ScrollView>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* ======================================================= */}
-        {/* State A: Accepted Material (Hard, heavy bottle)         */}
+        {/* 1. Scan result · Recyclable                             */}
         {/* ======================================================= */}
-        {!isRejectedMode ? (
+        {resultMode === 'recyclable' && (
           <View>
-            {/* Header Badge */}
             <View style={styles.headerRow}>
               <View style={styles.verifiedBadge}>
                 <Sparkles size={14} color="#2D6A2E" />
@@ -106,7 +157,6 @@ export default function ScanResultScreen() {
               </TouchableOpacity>
             </View>
 
-            {/* Material Identification Card */}
             <View style={styles.materialCard}>
               <View style={styles.materialIconCircle}>
                 <Scale size={28} color="#2D6A2E" />
@@ -117,7 +167,6 @@ export default function ScanResultScreen() {
               </View>
             </View>
 
-            {/* Valuation Card ("You could get") */}
             <View style={styles.valuationCard}>
               <Text style={styles.valuationLabel}>You could get</Text>
               <View style={styles.valuationRow}>
@@ -131,7 +180,6 @@ export default function ScanResultScreen() {
               </Text>
             </View>
 
-            {/* Quality Checklist */}
             <View style={styles.checklistCard}>
               <Text style={styles.checklistTitle}>Quick checklist for top price</Text>
               <View style={styles.checkItem}>
@@ -144,7 +192,6 @@ export default function ScanResultScreen() {
               </View>
             </View>
 
-            {/* "Not right? Change it" Link */}
             <TouchableOpacity
               style={styles.changeLink}
               onPress={() => setSheetVisible(true)}
@@ -154,7 +201,6 @@ export default function ScanResultScreen() {
               <Text style={styles.changeLinkText}>Not right? Change it</Text>
             </TouchableOpacity>
 
-            {/* Escrow note */}
             <View style={styles.escrowBanner}>
               <ShieldCheck size={16} color="#2D6A2E" />
               <Text style={styles.escrowBannerText}>
@@ -162,7 +208,6 @@ export default function ScanResultScreen() {
               </Text>
             </View>
 
-            {/* CTA Button */}
             <TouchableOpacity
               style={styles.primaryCtaBtn}
               onPress={() => router.push('/recyclers')}
@@ -172,35 +217,211 @@ export default function ScanResultScreen() {
               <ArrowRight size={18} color="#FFFFFF" />
             </TouchableOpacity>
           </View>
-        ) : (
-          /* ======================================================= */
-          /* State B: Not Collected / Rejection Guide                */
-          /* ======================================================= */
+        )}
+
+        {/* ======================================================= */}
+        {/* 2. Scan result · Not sure                               */}
+        {/* ======================================================= */}
+        {resultMode === 'not_sure' && (
+          <View>
+            <View style={styles.notSureIconWrap}>
+              <HelpCircle size={38} color="#D97706" />
+            </View>
+
+            <View style={styles.amberPillSelf}>
+              <AlertTriangle size={13} color="#B45309" />
+              <Text style={styles.amberPillText}>Low light or blurry photo</Text>
+            </View>
+
+            <Text style={styles.rejectTitle}>We're not quite sure</Text>
+            <Text style={styles.rejectSubhead}>
+              We couldn't see the label clearly. Retake in good light, or pick what you scanned below:
+            </Text>
+
+            {/* Quick Pick Material Options */}
+            <View style={styles.quickPickSection}>
+              <Text style={styles.quickPickLabel}>WHICH ONE IS IT?</Text>
+
+              <TouchableOpacity
+                style={styles.quickPickCard}
+                onPress={() => {
+                  setMaterial({
+                    id: 'pet',
+                    name: 'Clear PET Plastic',
+                    title: 'Clear drink bottle (PET)',
+                    weight: 3.0,
+                    rate: 120,
+                  });
+                  setResultMode('recyclable');
+                }}
+                activeOpacity={0.75}
+              >
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.quickPickTitle}>Clear drink bottle (PET)</Text>
+                  <Text style={styles.quickPickSub}>Water or soda bottle · ₦100–150/kg</Text>
+                </View>
+                <ArrowRight size={18} color="#2D6A2E" />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.quickPickCard}
+                onPress={() => {
+                  setMaterial({
+                    id: 'hdpe',
+                    name: 'HDPE Rigid Plastic',
+                    title: 'Hard, heavy bottle',
+                    weight: 3.0,
+                    rate: 130,
+                  });
+                  setResultMode('recyclable');
+                }}
+                activeOpacity={0.75}
+              >
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.quickPickTitle}>Thick plastic container (HDPE)</Text>
+                  <Text style={styles.quickPickSub}>Shampoo, detergent, jerrycan · ₦110–140/kg</Text>
+                </View>
+                <ArrowRight size={18} color="#2D6A2E" />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.quickPickCard}
+                onPress={() => {
+                  setMaterial({
+                    id: 'cans',
+                    name: 'Aluminium Drink Cans',
+                    title: 'Aluminium cans',
+                    weight: 2.5,
+                    rate: 220,
+                  });
+                  setResultMode('recyclable');
+                }}
+                activeOpacity={0.75}
+              >
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.quickPickTitle}>Drink can (Aluminium)</Text>
+                  <Text style={styles.quickPickSub}>Malt, soda, energy drink cans · ₦180–250/kg</Text>
+                </View>
+                <ArrowRight size={18} color="#2D6A2E" />
+              </TouchableOpacity>
+            </View>
+
+            {/* Light tip */}
+            <View style={styles.tipBoxAmber}>
+              <Sun size={16} color="#B45309" />
+              <Text style={styles.tipBoxAmberText}>
+                Tip: Put one item on a plain surface and show the recycling triangle or label.
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              style={styles.primaryCtaBtn}
+              onPress={() => router.push('/scan')}
+              activeOpacity={0.8}
+            >
+              <RotateCcw size={18} color="#FFFFFF" />
+              <Text style={styles.primaryCtaBtnText}>Retake photo</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* ======================================================= */}
+        {/* 3. Scan result · Not recyclable                         */}
+        {/* ======================================================= */}
+        {resultMode === 'not_recyclable' && (
           <View>
             <View style={styles.rejectIconWrap}>
               <Ban size={40} color="#DC2626" />
             </View>
 
-            <Text style={styles.rejectTitle}>Not collected</Text>
+            <View style={styles.redPillSelf}>
+              <Text style={styles.redPillText}>Not recyclable</Text>
+            </View>
+
+            <Text style={styles.rejectTitle}>This item can't be recycled</Text>
             <Text style={styles.rejectSubhead}>
-              EcoSmart partners in Kubwa cannot purchase this material.
+              Single-use food wrappers, takeaway styrofoam, and soiled nylons cannot be reprocessed.
             </Text>
 
             <View style={styles.rejectReasonsCard}>
-              <Text style={styles.rejectSectionTitle}>Why this item is not accepted:</Text>
+              <Text style={styles.rejectSectionTitle}>Why it can't be recycled:</Text>
               <Text style={styles.rejectReasonItem}>
-                • Single-use thin nylon/polythene bags are not recyclable at our partner facilities.
+                • Mixed plastic-foil layers or expanded polystyrene (takeaway packs) break recycling machines.
               </Text>
               <Text style={styles.rejectReasonItem}>
-                • Items contaminated with food grease, medical chemicals, or hazardous solvents.
+                • Food oil and grease contaminate clean plastic batches.
               </Text>
             </View>
 
             <View style={styles.properDisposalCard}>
-              <Text style={styles.properDisposalTitle}>Recommended disposal:</Text>
+              <Text style={styles.properDisposalTitle}>What to do with it:</Text>
               <Text style={styles.properDisposalText}>
-                Please bag this item securely and dispose via your scheduled municipal waste collector (AEPB in Abuja).
+                Put it in your general household waste bin for AEPB collection. Keep it separate from your clean PET bottles and cans.
               </Text>
+            </View>
+
+            <TouchableOpacity
+              style={styles.primaryCtaBtn}
+              onPress={() => router.push('/scan')}
+              activeOpacity={0.8}
+            >
+              <RotateCcw size={18} color="#FFFFFF" />
+              <Text style={styles.primaryCtaBtnText}>Scan another item</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* ======================================================= */}
+        {/* 4. Scan result · Not collected yet                      */}
+        {/* ======================================================= */}
+        {resultMode === 'not_collected_yet' && (
+          <View>
+            <View style={styles.notCollectedIconWrap}>
+              <Clock size={38} color="#2563EB" />
+            </View>
+
+            <View style={styles.bluePillSelf}>
+              <Text style={styles.bluePillText}>Not collected in Kubwa yet</Text>
+            </View>
+
+            <Text style={styles.rejectTitle}>Recyclable, but no buyer near you yet</Text>
+            <Text style={styles.rejectSubhead}>
+              Carton juice packs (Tetra Pak) and glass jars can be recycled, but no verified recycler in Kubwa is buying them this week.
+            </Text>
+
+            <View style={styles.rejectReasonsCard}>
+              <Text style={styles.rejectSectionTitle}>What recyclers in Kubwa buy right now:</Text>
+              <Text style={styles.rejectReasonItem}>• Clear PET drink bottles (₦100–150/kg)</Text>
+              <Text style={styles.rejectReasonItem}>• Hard HDPE containers & jerrycans (₦110–140/kg)</Text>
+              <Text style={styles.rejectReasonItem}>• Aluminium drink cans (₦180–250/kg)</Text>
+              <Text style={styles.rejectReasonItem}>• Clean brown cardboard boxes (₦50–80/kg)</Text>
+            </View>
+
+            {/* Notify Me Card */}
+            <View style={styles.notifyCard}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.notifyCardTitle}>Want to know when a buyer starts?</Text>
+                <Text style={styles.notifyCardSub}>
+                  We'll send you one notification when a recycler in Kubwa starts collecting this item.
+                </Text>
+              </View>
+              <TouchableOpacity
+                style={[styles.notifyToggleBtn, notifySubscribed && styles.notifyToggleBtnDone]}
+                onPress={() => setNotifySubscribed(!notifySubscribed)}
+                activeOpacity={0.8}
+              >
+                {notifySubscribed ? (
+                  <>
+                    <Check size={14} color="#15803D" strokeWidth={2.8} />
+                    <Text style={styles.notifyToggleTextDone}>Saved</Text>
+                  </>
+                ) : (
+                  <>
+                    <Bell size={14} color="#0F1E12" />
+                    <Text style={styles.notifyToggleText}>Notify me</Text>
+                  </>
+                )}
+              </TouchableOpacity>
             </View>
 
             <TouchableOpacity
@@ -236,23 +457,26 @@ const styles = StyleSheet.create({
     backgroundColor: '#F8FAFC',
   },
   demoBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
     backgroundColor: '#EFF6FF',
     borderBottomWidth: 1,
     borderBottomColor: '#DBEAFE',
+    paddingVertical: 8,
+  },
+  demoScroll: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
     gap: 6,
   },
   demoTitle: {
     fontSize: 12,
     fontWeight: '700',
     color: '#1E3A8A',
+    marginRight: 4,
   },
   demoPill: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     borderRadius: 12,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
@@ -350,10 +574,12 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   valuationLabel: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '600',
-    color: '#64748B',
-    marginBottom: 4,
+    color: '#2D6A2E',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 6,
   },
   valuationRow: {
     flexDirection: 'row',
@@ -365,7 +591,6 @@ const styles = StyleSheet.create({
     fontSize: 34,
     fontWeight: '800',
     color: '#0F1E12',
-    letterSpacing: -0.5,
   },
   weightBadge: {
     backgroundColor: '#EAF5EA',
@@ -375,12 +600,12 @@ const styles = StyleSheet.create({
   },
   weightBadgeText: {
     fontSize: 14,
-    fontWeight: '800',
+    fontWeight: '700',
     color: '#2D6A2E',
   },
   valuationFormula: {
     fontSize: 13,
-    color: '#475569',
+    color: '#64748B',
   },
   checklistCard: {
     backgroundColor: '#FFFFFF',
@@ -391,7 +616,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   checklistTitle: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
     color: '#0F1E12',
     marginBottom: 10,
@@ -399,7 +624,7 @@ const styles = StyleSheet.create({
   checkItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 10,
     marginBottom: 8,
   },
   checkItemText: {
@@ -411,8 +636,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    paddingVertical: 8,
-    marginBottom: 14,
+    paddingVertical: 10,
+    marginBottom: 12,
   },
   changeLinkText: {
     fontSize: 14,
@@ -423,7 +648,7 @@ const styles = StyleSheet.create({
   escrowBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 10,
     backgroundColor: '#EAF5EA',
     borderRadius: 12,
     padding: 12,
@@ -448,7 +673,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 8,
     elevation: 4,
-    marginBottom: 16,
   },
   primaryCtaBtnText: {
     fontSize: 15,
@@ -456,18 +680,84 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
 
+  /* Not Sure / Not Recyclable / Not Collected Yet Shared Styles */
+  notSureIconWrap: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    backgroundColor: '#FEF3C7',
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'center',
+    marginTop: 8,
+    marginBottom: 12,
+  },
+  notCollectedIconWrap: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    backgroundColor: '#DBEAFE',
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'center',
+    marginTop: 8,
+    marginBottom: 12,
+  },
   rejectIconWrap: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
+    width: 68,
+    height: 68,
+    borderRadius: 34,
     backgroundColor: '#FEE2E2',
     alignItems: 'center',
     justifyContent: 'center',
     alignSelf: 'center',
-    marginVertical: 16,
+    marginTop: 8,
+    marginBottom: 12,
+  },
+  amberPillSelf: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'center',
+    gap: 6,
+    backgroundColor: '#FEF3C7',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginBottom: 10,
+  },
+  amberPillText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#B45309',
+  },
+  redPillSelf: {
+    alignSelf: 'center',
+    backgroundColor: '#FEE2E2',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginBottom: 10,
+  },
+  redPillText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#DC2626',
+  },
+  bluePillSelf: {
+    alignSelf: 'center',
+    backgroundColor: '#DBEAFE',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginBottom: 10,
+  },
+  bluePillText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#1D4ED8',
   },
   rejectTitle: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: '800',
     color: '#0F1E12',
     textAlign: 'center',
@@ -478,45 +768,139 @@ const styles = StyleSheet.create({
     color: '#475569',
     textAlign: 'center',
     lineHeight: 20,
-    marginBottom: 24,
+    marginBottom: 20,
   },
-  rejectReasonsCard: {
+  quickPickSection: {
+    marginBottom: 16,
+    gap: 10,
+  },
+  quickPickLabel: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#64748B',
+    letterSpacing: 0.6,
+    marginBottom: 2,
+  },
+  quickPickCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  quickPickTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#0F1E12',
+    marginBottom: 2,
+  },
+  quickPickSub: {
+    fontSize: 12,
+    color: '#64748B',
+  },
+  tipBoxAmber: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
     backgroundColor: '#FFFBEB',
-    borderRadius: 16,
-    padding: 16,
     borderWidth: 1,
     borderColor: '#FDE68A',
-    marginBottom: 14,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 20,
   },
-  rejectSectionTitle: {
-    fontSize: 13,
-    fontWeight: '700',
+  tipBoxAmberText: {
+    fontSize: 12.5,
     color: '#92400E',
-    marginBottom: 8,
-  },
-  rejectReasonItem: {
-    fontSize: 13,
-    color: '#B45309',
     lineHeight: 18,
-    marginBottom: 6,
+    flex: 1,
   },
-  properDisposalCard: {
+  rejectReasonsCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: 16,
     borderWidth: 1,
     borderColor: '#E2E8F0',
+    marginBottom: 14,
+  },
+  rejectSectionTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#0F1E12',
+    marginBottom: 10,
+  },
+  rejectReasonItem: {
+    fontSize: 13,
+    color: '#475569',
+    lineHeight: 19,
+    marginBottom: 8,
+  },
+  properDisposalCard: {
+    backgroundColor: '#FFFBEB',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#FDE68A',
     marginBottom: 24,
   },
   properDisposalTitle: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
-    color: '#0F1E12',
+    color: '#92400E',
     marginBottom: 6,
   },
   properDisposalText: {
     fontSize: 13,
-    color: '#475569',
+    color: '#B45309',
     lineHeight: 19,
+  },
+  notifyCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: '#EFF6FF',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    marginBottom: 24,
+  },
+  notifyCardTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#1E3A8A',
+    marginBottom: 4,
+  },
+  notifyCardSub: {
+    fontSize: 12,
+    color: '#1E40AF',
+    lineHeight: 17,
+  },
+  notifyToggleBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#93C5FD',
+  },
+  notifyToggleBtnDone: {
+    backgroundColor: '#DCFCE7',
+    borderColor: '#86EFAC',
+  },
+  notifyToggleText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#0F1E12',
+  },
+  notifyToggleTextDone: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#15803D',
   },
 });

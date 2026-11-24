@@ -7,26 +7,26 @@ import {
   TextInput,
   StyleSheet,
   SafeAreaView,
-  Image,
+  Modal,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
   MapPin,
-  Calendar,
   Clock,
   Sparkles,
   CheckCircle2,
   AlertCircle,
-  X,
-  ChevronRight,
   ShieldCheck,
-  Check,
+  WifiOff,
+  RotateCcw,
+  ArrowRight,
 } from 'lucide-react-native';
 
 import { AppHeader } from '../../components/common/AppHeader';
-import { TopGreenWave } from '../../components/common/TopGreenWave';
 import { BottomNavBar } from '../../components/common/BottomNavBar';
 import { LanguageBottomSheet } from '../../components/sheets/LanguageBottomSheet';
+
+type RequestStep = 'form' | 'send_failed' | 'waiting' | 'no_response' | 'accepted';
 
 export default function RequestPickupScreen() {
   const router = useRouter();
@@ -41,33 +41,96 @@ export default function RequestPickupScreen() {
   const [landmark, setLandmark] = useState('Blue gate opposite the pharmacy');
   const [day, setDay] = useState<'today' | 'tomorrow'>('today');
   const [timeSlot, setTimeSlot] = useState<'morning' | 'afternoon' | 'evening'>('morning');
-  const [step, setStep] = useState<'form' | 'waiting' | 'accepted'>('form');
+  const [step, setStep] = useState<RequestStep>('form');
+  const [cancelSheetVisible, setCancelSheetVisible] = useState(false);
   const [langSheetVisible, setLangSheetVisible] = useState(false);
 
   const handleSendRequest = () => {
     setStep('waiting');
-    // Simulate recycler acceptance after 3 seconds for demonstration
-    setTimeout(() => {
-      setStep('accepted');
-    }, 3000);
   };
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      {/* 1. Header (White Nav Bar + Small Green Wave Strip) */}
       <AppHeader
         showBack
         onOpenLanguage={() => setLangSheetVisible(true)}
       />
+
+      {/* Top Demo State Switcher */}
+      <View style={styles.demoBar}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.demoScroll}
+        >
+          <Text style={styles.demoBarLabel}>Request State:</Text>
+          {(
+            [
+              { key: 'form', label: '04 Form' },
+              { key: 'send_failed', label: 'Send failed' },
+              { key: 'waiting', label: 'Waiting' },
+              { key: 'no_response', label: 'No response' },
+              { key: 'accepted', label: 'Accepted' },
+            ] as const
+          ).map((item) => (
+            <TouchableOpacity
+              key={item.key}
+              style={[styles.demoPill, step === item.key && styles.demoPillActive]}
+              onPress={() => setStep(item.key)}
+            >
+              <Text
+                style={[
+                  styles.demoPillText,
+                  step === item.key && styles.demoPillTextActive,
+                ]}
+              >
+                {item.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+          <TouchableOpacity
+            style={[styles.demoPill, cancelSheetVisible && styles.demoPillActive]}
+            onPress={() => setCancelSheetVisible(true)}
+          >
+            <Text style={[styles.demoPillText, cancelSheetVisible && styles.demoPillTextActive]}>
+              Cancel sheet
+            </Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </View>
 
       <View style={styles.container}>
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
         >
-          {step === 'form' ? (
-            /* =================== FORM STATE (G-F03) =================== */
+          {/* ===================================================== */}
+          {/* 1. FORM STATE (G-F03) & SEND FAILED BANNER            */}
+          {/* ===================================================== */}
+          {(step === 'form' || step === 'send_failed') && (
             <View>
+              {step === 'send_failed' && (
+                <View style={styles.sendFailedBanner}>
+                  <View style={styles.sendFailedIconBox}>
+                    <WifiOff size={18} color="#DC2626" />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.sendFailedTitle}>Couldn't send your request</Text>
+                    <Text style={styles.sendFailedSub}>
+                      Check your internet connection. Your address and time are saved below.
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    style={styles.retryPillBtn}
+                    onPress={() => setStep('waiting')}
+                    activeOpacity={0.8}
+                  >
+                    <RotateCcw size={13} color="#FFFFFF" />
+                    <Text style={styles.retryPillBtnText}>Retry</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+
               <Text style={styles.screenTitle}>Request pickup</Text>
               <Text style={styles.recyclerSub}>{recyclerName}</Text>
 
@@ -81,7 +144,16 @@ export default function RequestPickupScreen() {
               <View style={styles.fieldCard}>
                 <View style={styles.fieldHeader}>
                   <Text style={styles.fieldLabel}>Pickup address</Text>
-                  <TouchableOpacity activeOpacity={0.7}>
+                  <TouchableOpacity
+                    onPress={() =>
+                      setAddress(
+                        address.includes('Byazhin')
+                          ? 'Phase 4, Gado Nasko Road, Kubwa'
+                          : '12 Byazhin Road, Kubwa'
+                      )
+                    }
+                    activeOpacity={0.7}
+                  >
                     <Text style={styles.changeActionText}>Change</Text>
                   </TouchableOpacity>
                 </View>
@@ -110,7 +182,6 @@ export default function RequestPickupScreen() {
               <View style={styles.fieldCard}>
                 <Text style={styles.fieldLabel}>When?</Text>
 
-                {/* Day selector */}
                 <View style={styles.optionRow}>
                   <TouchableOpacity
                     style={[
@@ -149,7 +220,6 @@ export default function RequestPickupScreen() {
                   </TouchableOpacity>
                 </View>
 
-                {/* Time slot selector */}
                 <View style={styles.slotRow}>
                   {(['morning', 'afternoon', 'evening'] as const).map((slot) => {
                     const label =
@@ -196,7 +266,7 @@ export default function RequestPickupScreen() {
               <TouchableOpacity
                 style={styles.minaPromoRow}
                 activeOpacity={0.7}
-                onPress={() => alert('Mina AI says: "Keep your bottles dry and bagged. The driver will weigh on arrival!"')}
+                onPress={() => router.push('/mina' as any)}
               >
                 <Sparkles size={16} color="#2D6A2E" />
                 <Text style={styles.minaPromoText}>
@@ -210,11 +280,17 @@ export default function RequestPickupScreen() {
                 onPress={handleSendRequest}
                 activeOpacity={0.85}
               >
-                <Text style={styles.submitBtnText}>Send request</Text>
+                <Text style={styles.submitBtnText}>
+                  {step === 'send_failed' ? 'Try sending again' : 'Send request'}
+                </Text>
               </TouchableOpacity>
             </View>
-          ) : step === 'waiting' ? (
-            /* =================== WAITING STATE (G-F04) =================== */
+          )}
+
+          {/* ===================================================== */}
+          {/* 2. WAITING STATE (G-F04)                              */}
+          {/* ===================================================== */}
+          {step === 'waiting' && (
             <View>
               <View style={styles.trackingHeader}>
                 <Text style={styles.requestIdText}>Your request REQ-001</Text>
@@ -230,14 +306,6 @@ export default function RequestPickupScreen() {
               <Text style={styles.trackingSub}>
                 They usually reply in about 15 minutes. We'll send you an SMS.
               </Text>
-
-              {/* Simulation Banner */}
-              <View style={styles.simNotice}>
-                <Sparkles size={14} color="#15803D" />
-                <Text style={styles.simNoticeText}>
-                  Auto-accept simulation in progress (3s)...
-                </Text>
-              </View>
 
               {/* What happens next steps */}
               <View style={styles.stepsCard}>
@@ -280,17 +348,90 @@ export default function RequestPickupScreen() {
                 </View>
               </View>
 
-              {/* Cancel Request Button */}
+              <TouchableOpacity
+                style={styles.submitBtn}
+                onPress={() => setStep('accepted')}
+                activeOpacity={0.85}
+              >
+                <Text style={styles.submitBtnText}>Simulate: Recycler accepts →</Text>
+              </TouchableOpacity>
+
+              {/* Cancel Request Button triggers Confirmation Sheet */}
               <TouchableOpacity
                 style={styles.cancelBtn}
-                onPress={() => setStep('form')}
+                onPress={() => setCancelSheetVisible(true)}
                 activeOpacity={0.7}
               >
                 <Text style={styles.cancelBtnText}>Cancel request</Text>
               </TouchableOpacity>
             </View>
-          ) : (
-            /* =================== ACCEPTED STATE (G-F05) =================== */
+          )}
+
+          {/* ===================================================== */}
+          {/* 3. NO RESPONSE STATE (Household · State · No response)*/}
+          {/* ===================================================== */}
+          {step === 'no_response' && (
+            <View>
+              <View style={styles.trackingHeader}>
+                <Text style={styles.requestIdText}>Your request REQ-001</Text>
+                <View style={styles.statusBadgeWaiting}>
+                  <AlertCircle size={13} color="#B45309" />
+                  <Text style={styles.statusBadgeWaitingText}>No response yet</Text>
+                </View>
+              </View>
+
+              <Text style={styles.trackingTitle}>
+                No reply from {recyclerName}
+              </Text>
+              <Text style={styles.trackingSub}>
+                It's been over an hour. You can let EcoSmart match you with the first available recycler near Kubwa.
+              </Text>
+
+              <View style={styles.autoMatchHighlightCard}>
+                <View style={styles.autoMatchTopRow}>
+                  <View style={styles.sparkleCircle}>
+                    <Sparkles size={20} color="#2D6A2E" />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.autoMatchTitle}>Let EcoSmart match me</Text>
+                    <Text style={styles.autoMatchDesc}>
+                      We send your ~{weightKg} kg PET request to 4 verified recyclers near Kubwa. First to accept comes today.
+                    </Text>
+                  </View>
+                </View>
+
+                <TouchableOpacity
+                  style={styles.autoMatchActionBtn}
+                  onPress={() => setStep('accepted')}
+                  activeOpacity={0.85}
+                >
+                  <Text style={styles.autoMatchActionBtnText}>Match me now</Text>
+                  <ArrowRight size={16} color="#FFFFFF" />
+                </TouchableOpacity>
+              </View>
+
+              <TouchableOpacity
+                style={styles.secondaryChoiceBtn}
+                onPress={() => router.push('/recyclers' as any)}
+                activeOpacity={0.75}
+              >
+                <Text style={styles.secondaryChoiceBtnText}>Choose another recycler</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.cancelBtn}
+                onPress={() => setCancelSheetVisible(true)}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.cancelBtnText}>Cancel request</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* ===================================================== */}
+          {/* 4. ACCEPTED STATE (G-F05)                             */}
+          {/* ===================================================== */}
+          {step === 'accepted' && (
             <View>
               <View style={styles.trackingHeader}>
                 <Text style={styles.requestIdText}>Your request REQ-001</Text>
@@ -359,6 +500,45 @@ export default function RequestPickupScreen() {
 
       <BottomNavBar activeTab="requests" />
 
+      {/* ===================================================== */}
+      {/* Cancel Request Confirmation Bottom Sheet              */}
+      {/* ===================================================== */}
+      <Modal
+        visible={cancelSheetVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setCancelSheetVisible(false)}
+      >
+        <View style={styles.sheetBackdrop}>
+          <View style={styles.cancelSheetCard}>
+            <View style={styles.sheetHandle} />
+            <Text style={styles.cancelSheetTitle}>Cancel this pickup request?</Text>
+            <Text style={styles.cancelSheetDesc}>
+              {recyclerName} hasn't accepted yet, so there is no fee to cancel. Your scanned waste items will stay saved.
+            </Text>
+
+            <TouchableOpacity
+              style={styles.confirmCancelRedBtn}
+              onPress={() => {
+                setCancelSheetVisible(false);
+                setStep('form');
+              }}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.confirmCancelRedBtnText}>Yes, cancel request</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.keepWaitingBtn}
+              onPress={() => setCancelSheetVisible(false)}
+              activeOpacity={0.75}
+            >
+              <Text style={styles.keepWaitingBtnText}>Keep waiting</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
       <LanguageBottomSheet
         visible={langSheetVisible}
         onClose={() => setLangSheetVisible(false)}
@@ -372,6 +552,44 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
+  demoBar: {
+    backgroundColor: '#F1F5F9',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
+    paddingVertical: 8,
+  },
+  demoScroll: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    gap: 6,
+  },
+  demoBarLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#475569',
+    marginRight: 4,
+  },
+  demoPill: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+  },
+  demoPillActive: {
+    backgroundColor: '#2D6A2E',
+    borderColor: '#2D6A2E',
+  },
+  demoPillText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#475569',
+  },
+  demoPillTextActive: {
+    color: '#FFFFFF',
+  },
   container: {
     flex: 1,
     width: '100%',
@@ -380,6 +598,50 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: 18,
     paddingBottom: 40,
+  },
+  sendFailedBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FECACA',
+    borderRadius: 14,
+    padding: 12,
+    marginBottom: 16,
+  },
+  sendFailedIconBox: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: '#FEE2E2',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sendFailedTitle: {
+    fontSize: 13.5,
+    fontWeight: '800',
+    color: '#991B1B',
+  },
+  sendFailedSub: {
+    fontSize: 11.5,
+    color: '#B91C1C',
+    marginTop: 2,
+    lineHeight: 16,
+  },
+  retryPillBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#DC2626',
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 10,
+  },
+  retryPillBtnText: {
+    fontSize: 11.5,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
   screenTitle: {
     fontSize: 24,
@@ -623,20 +885,6 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     marginBottom: 16,
   },
-  simNotice: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: '#ECFDF5',
-    padding: 10,
-    borderRadius: 10,
-    marginBottom: 16,
-  },
-  simNoticeText: {
-    fontSize: 11.5,
-    color: '#15803D',
-    fontWeight: '600',
-  },
   stepsCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
@@ -681,9 +929,70 @@ const styles = StyleSheet.create({
     color: '#64748B',
     marginTop: 2,
   },
+  autoMatchHighlightCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1.5,
+    borderColor: '#C7E4B2',
+    marginBottom: 14,
+  },
+  autoMatchTopRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 14,
+  },
+  sparkleCircle: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#EAF5EA',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  autoMatchTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#0F1E12',
+    marginBottom: 4,
+  },
+  autoMatchDesc: {
+    fontSize: 13,
+    color: '#475569',
+    lineHeight: 18,
+  },
+  autoMatchActionBtn: {
+    backgroundColor: '#2D6A2E',
+    paddingVertical: 13,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  autoMatchActionBtnText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  secondaryChoiceBtn: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: '#CBD5E1',
+    paddingVertical: 14,
+    borderRadius: 14,
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  secondaryChoiceBtnText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#0F1E12',
+  },
   cancelBtn: {
     alignItems: 'center',
     paddingVertical: 12,
+    marginTop: 4,
   },
   cancelBtnText: {
     fontSize: 13,
@@ -746,5 +1055,60 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '800',
+  },
+  sheetBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 30, 18, 0.45)',
+    justifyContent: 'flex-end',
+  },
+  cancelSheetCard: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 22,
+    paddingBottom: 32,
+  },
+  sheetHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#CBD5E1',
+    alignSelf: 'center',
+    marginBottom: 16,
+  },
+  cancelSheetTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#0F1E12',
+    marginBottom: 8,
+  },
+  cancelSheetDesc: {
+    fontSize: 14,
+    color: '#475569',
+    lineHeight: 20,
+    marginBottom: 20,
+  },
+  confirmCancelRedBtn: {
+    backgroundColor: '#DC2626',
+    paddingVertical: 14,
+    borderRadius: 14,
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  confirmCancelRedBtnText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  keepWaitingBtn: {
+    backgroundColor: '#F1F5F9',
+    paddingVertical: 14,
+    borderRadius: 14,
+    alignItems: 'center',
+  },
+  keepWaitingBtnText: {
+    color: '#0F1E12',
+    fontSize: 14,
+    fontWeight: '700',
   },
 });

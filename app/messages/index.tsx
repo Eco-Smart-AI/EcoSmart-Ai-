@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -60,10 +60,32 @@ const THREADS: MessageThread[] = [
 
 export default function MessagesScreen() {
   const router = useRouter();
+  const [isEmptyMode, setIsEmptyMode] = useState(false);
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <AppHeader showBack={true} rightAction="bell" />
+
+      {/* Top Demo State Switcher */}
+      <View style={styles.demoBar}>
+        <Text style={styles.demoTitle}>Messages State:</Text>
+        <TouchableOpacity
+          style={[styles.demoPill, !isEmptyMode && styles.demoPillActive]}
+          onPress={() => setIsEmptyMode(false)}
+        >
+          <Text style={[styles.demoPillText, !isEmptyMode && styles.demoPillTextActive]}>
+            Threads ({THREADS.length})
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.demoPill, isEmptyMode && styles.demoPillActive]}
+          onPress={() => setIsEmptyMode(true)}
+        >
+          <Text style={[styles.demoPillText, isEmptyMode && styles.demoPillTextActive]}>
+            State · Messages · Empty
+          </Text>
+        </TouchableOpacity>
+      </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Title & Privacy Subtitle */}
@@ -82,65 +104,86 @@ export default function MessagesScreen() {
           </Text>
         </View>
 
-        {/* Chat Thread List */}
-        <View style={styles.threadList}>
-          {THREADS.map((thread) => {
-            return (
-              <TouchableOpacity
-                key={thread.id}
-                style={[styles.threadCard, thread.unread && styles.threadCardUnread]}
-                onPress={() => router.push(`/chat/${thread.id}`)}
-                activeOpacity={0.7}
-              >
-                <View style={[styles.avatar, { backgroundColor: thread.avatarBg }]}>
-                  <Text style={styles.avatarText}>{thread.avatarInitials}</Text>
-                  {thread.unread && <View style={styles.unreadDot} />}
-                </View>
-
-                <View style={styles.threadBody}>
-                  <View style={styles.threadHeader}>
-                    <Text style={styles.threadName}>{thread.name}</Text>
-                    <Text style={styles.threadTime}>{thread.time}</Text>
+        {!isEmptyMode ? (
+          /* Chat Thread List */
+          <View style={styles.threadList}>
+            {THREADS.map((thread) => {
+              return (
+                <TouchableOpacity
+                  key={thread.id}
+                  style={[styles.threadCard, thread.unread && styles.threadCardUnread]}
+                  onPress={() => router.push(`/chat/${thread.id}`)}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.avatar, { backgroundColor: thread.avatarBg }]}>
+                    <Text style={styles.avatarText}>{thread.avatarInitials}</Text>
+                    {thread.unread && <View style={styles.unreadDot} />}
                   </View>
 
-                  <Text
-                    style={[styles.lastMessage, thread.unread && styles.lastMessageUnread]}
-                    numberOfLines={1}
-                  >
-                    {thread.lastMessage}
-                  </Text>
+                  <View style={styles.threadBody}>
+                    <View style={styles.threadHeader}>
+                      <Text style={styles.threadName}>{thread.name}</Text>
+                      <Text style={styles.threadTime}>{thread.time}</Text>
+                    </View>
 
-                  <View style={styles.tagRow}>
-                    <View
-                      style={[
-                        styles.tagPill,
-                        thread.tagType === 'pickup' && styles.tagPickup,
-                        thread.tagType === 'question' && styles.tagQuestion,
-                        thread.tagType === 'done' && styles.tagDone,
-                      ]}
+                    <Text
+                      style={[styles.lastMessage, thread.unread && styles.lastMessageUnread]}
+                      numberOfLines={1}
                     >
-                      <Text
+                      {thread.lastMessage}
+                    </Text>
+
+                    <View style={styles.tagRow}>
+                      <View
                         style={[
-                          styles.tagText,
-                          thread.tagType === 'pickup' && styles.tagTextPickup,
-                          thread.tagType === 'question' && styles.tagTextQuestion,
-                          thread.tagType === 'done' && styles.tagTextDone,
+                          styles.tagPill,
+                          thread.tagType === 'pickup' && styles.tagPickup,
+                          thread.tagType === 'question' && styles.tagQuestion,
+                          thread.tagType === 'done' && styles.tagDone,
                         ]}
                       >
-                        {thread.tag}
-                      </Text>
+                        <Text
+                          style={[
+                            styles.tagText,
+                            thread.tagType === 'pickup' && styles.tagTextPickup,
+                            thread.tagType === 'question' && styles.tagTextQuestion,
+                            thread.tagType === 'done' && styles.tagTextDone,
+                          ]}
+                        >
+                          {thread.tag}
+                        </Text>
+                      </View>
                     </View>
                   </View>
-                </View>
 
-                <ChevronRight size={18} color="#94A3B8" />
-              </TouchableOpacity>
-            );
-          })}
-        </View>
+                  <ChevronRight size={18} color="#94A3B8" />
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        ) : (
+          /* ===================================================== */
+          /* Household · State · Messages · Empty                  */
+          /* ===================================================== */
+          <View style={styles.emptyCard}>
+            <View style={styles.emptyIconCircle}>
+              <MessageSquare size={30} color="#2D6A2E" />
+            </View>
+            <Text style={styles.emptyTitle}>No messages yet</Text>
+            <Text style={styles.emptyDesc}>
+              When you ask a recycler a question or book a pickup, your private chats will appear here.
+            </Text>
+            <TouchableOpacity
+              style={styles.findRecyclerBtn}
+              onPress={() => router.push('/recyclers' as any)}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.findRecyclerBtnText}>Find a recycler</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </ScrollView>
 
-      {/* Bottom Nav with Messages tab highlighted */}
       <BottomNavBar activeTab="messages" />
     </SafeAreaView>
   );
@@ -150,6 +193,42 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: '#F8FAFC',
+  },
+  demoBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: '#F1F5F9',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
+    gap: 6,
+  },
+  demoTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#475569',
+    marginRight: 4,
+  },
+  demoPill: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+  },
+  demoPillActive: {
+    backgroundColor: '#2D6A2E',
+    borderColor: '#2D6A2E',
+  },
+  demoPillText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#475569',
+  },
+  demoPillTextActive: {
+    color: '#FFFFFF',
   },
   scrollContent: {
     padding: 18,
@@ -285,5 +364,49 @@ const styles = StyleSheet.create({
   },
   tagTextDone: {
     color: '#64748B',
+  },
+  emptyCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  emptyIconCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#EAF5EA',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 14,
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#0F1E12',
+    marginBottom: 6,
+  },
+  emptyDesc: {
+    fontSize: 13.5,
+    color: '#475569',
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 20,
+  },
+  findRecyclerBtn: {
+    backgroundColor: '#2D6A2E',
+    paddingVertical: 14,
+    paddingHorizontal: 28,
+    borderRadius: 24,
+    width: '100%',
+    alignItems: 'center',
+  },
+  findRecyclerBtnText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700',
   },
 });

@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   SafeAreaView,
-  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
@@ -17,16 +16,19 @@ import {
   ArrowRight,
   HelpCircle,
   CheckCircle,
-  XCircle,
+  Camera,
+  MessageSquare,
 } from 'lucide-react-native';
 import { AppHeader } from '../../components/common/AppHeader';
 import { BottomNavBar } from '../../components/common/BottomNavBar';
 
+type NegotiationDemoState = 'G-B01' | 'G-B02' | 'G-B03' | 'G-B04' | 'G-B05';
+
 export default function NegotiationScreen() {
   const router = useRouter();
 
-  // State switcher for G-B01, G-B03, G-B04
-  const [activeScreen, setActiveScreen] = useState<'G-B01' | 'G-B03' | 'G-B04'>('G-B01');
+  // State switcher for G-B01, G-B02, G-B03, G-B04, G-B05
+  const [activeScreen, setActiveScreen] = useState<NegotiationDemoState>('G-B01');
   const [actionFeedback, setActionFeedback] = useState<string | null>(null);
 
   const handleAction = (message: string) => {
@@ -42,40 +44,40 @@ export default function NegotiationScreen() {
 
       {/* Demo Switcher */}
       <View style={styles.demoBar}>
-        <Text style={styles.demoTitle}>Exceptions Flow:</Text>
-        <TouchableOpacity
-          style={[styles.demoPill, activeScreen === 'G-B01' && styles.demoPillActive]}
-          onPress={() => {
-            setActiveScreen('G-B01');
-            setActionFeedback(null);
-          }}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.demoScroll}
         >
-          <Text style={[styles.demoPillText, activeScreen === 'G-B01' && styles.demoPillTextActive]}>
-            G-B01 (New Rate)
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.demoPill, activeScreen === 'G-B03' && styles.demoPillActive]}
-          onPress={() => {
-            setActiveScreen('G-B03');
-            setActionFeedback(null);
-          }}
-        >
-          <Text style={[styles.demoPillText, activeScreen === 'G-B03' && styles.demoPillTextActive]}>
-            G-B03 (No Reply)
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.demoPill, activeScreen === 'G-B04' && styles.demoPillActive]}
-          onPress={() => {
-            setActiveScreen('G-B04');
-            setActionFeedback(null);
-          }}
-        >
-          <Text style={[styles.demoPillText, activeScreen === 'G-B04' && styles.demoPillTextActive]}>
-            G-B04 (Handover?)
-          </Text>
-        </TouchableOpacity>
+          <Text style={styles.demoTitle}>Handover State:</Text>
+          {(
+            [
+              { key: 'G-B01', label: 'G-B01 New Rate' },
+              { key: 'G-B02', label: 'G-B02 Unclear Photo' },
+              { key: 'G-B03', label: 'G-B03 No Reply' },
+              { key: 'G-B04', label: 'G-B04 Handover?' },
+              { key: 'G-B05', label: 'G-B05 Dispute Sent' },
+            ] as const
+          ).map((item) => (
+            <TouchableOpacity
+              key={item.key}
+              style={[styles.demoPill, activeScreen === item.key && styles.demoPillActive]}
+              onPress={() => {
+                setActiveScreen(item.key);
+                setActionFeedback(null);
+              }}
+            >
+              <Text
+                style={[
+                  styles.demoPillText,
+                  activeScreen === item.key && styles.demoPillTextActive,
+                ]}
+              >
+                {item.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -88,7 +90,7 @@ export default function NegotiationScreen() {
         )}
 
         {/* ============================================================ */}
-        {/* G-B01: New Rate Offered */}
+        {/* G-B01: New Rate Offered                                      */}
         {/* ============================================================ */}
         {activeScreen === 'G-B01' && (
           <View>
@@ -135,7 +137,9 @@ export default function NegotiationScreen() {
             {/* CTAs */}
             <TouchableOpacity
               style={styles.primaryAcceptBtn}
-              onPress={() => handleAction('New rate accepted (₦320). Generating your handover code…')}
+              onPress={() =>
+                handleAction('New rate accepted (₦320). Generating your handover code…')
+              }
               activeOpacity={0.8}
             >
               <Text style={styles.primaryAcceptBtnText}>Accept ₦320</Text>
@@ -143,7 +147,9 @@ export default function NegotiationScreen() {
 
             <TouchableOpacity
               style={styles.secondaryRejectBtn}
-              onPress={() => handleAction('Offer declined. Your bottles remain yours with zero penalty.')}
+              onPress={() =>
+                handleAction('Offer declined. Your bottles remain yours with zero penalty.')
+              }
               activeOpacity={0.7}
             >
               <Text style={styles.secondaryRejectBtnText}>No, keep my bottles</Text>
@@ -152,7 +158,61 @@ export default function NegotiationScreen() {
         )}
 
         {/* ============================================================ */}
-        {/* G-B03: No Reply */}
+        {/* G-B02: Scale Photo Unclear                                   */}
+        {/* ============================================================ */}
+        {activeScreen === 'G-B02' && (
+          <View>
+            <View style={styles.screenHeader}>
+              <Text style={styles.headerContext}>Your pickup</Text>
+              <Text style={styles.reqCode}>REQ-001</Text>
+            </View>
+
+            <View style={styles.noReplyIconWrap}>
+              <Camera size={32} color="#D97706" />
+            </View>
+
+            <Text style={styles.screenTitle}>Waiting for a clearer scale photo</Text>
+            <Text style={styles.screenSubtitle}>
+              You asked Kubwa Green Hub to retake the scale photo so you can read the weight clearly.
+            </Text>
+
+            <View style={styles.reasonCard}>
+              <View style={styles.reasonHeader}>
+                <Clock size={16} color="#B45309" />
+                <Text style={styles.reasonTitle}>Don't give your 4-digit code yet</Text>
+              </View>
+              <Text style={styles.reasonQuote}>
+                Wait until the new scale photo shows on your screen and you agree to the final Naira amount.
+              </Text>
+            </View>
+
+            <View style={styles.escrowNote}>
+              <ShieldCheck size={16} color="#2D6A2E" />
+              <Text style={styles.escrowNoteText}>
+                ₦450 is still held safely by EcoSmart while they retake the photo.
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              style={styles.primaryAcceptBtn}
+              onPress={() => router.push('/pickup/REQ-001' as any)}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.primaryAcceptBtnText}>Simulate: New photo received →</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.secondaryRejectBtn}
+              onPress={() => router.push('/chat/kubwa-green-hub' as any)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.secondaryRejectBtnText}>Message recycler</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* ============================================================ */}
+        {/* G-B03: No Reply                                              */}
         {/* ============================================================ */}
         {activeScreen === 'G-B03' && (
           <View>
@@ -186,7 +246,9 @@ export default function NegotiationScreen() {
 
               <TouchableOpacity
                 style={styles.matchCtaBtn}
-                onPress={() => handleAction('EcoSmart matching activated! Searching nearest verified recyclers…')}
+                onPress={() =>
+                  handleAction('EcoSmart matching activated! Searching nearest verified recyclers…')
+                }
                 activeOpacity={0.8}
               >
                 <Text style={styles.matchCtaBtnText}>Match me</Text>
@@ -215,7 +277,7 @@ export default function NegotiationScreen() {
         )}
 
         {/* ============================================================ */}
-        {/* G-B04: Handover Check ("Did you give your bottles?") */}
+        {/* G-B04: Handover Check ("Did you give your bottles?")         */}
         {/* ============================================================ */}
         {activeScreen === 'G-B04' && (
           <View>
@@ -257,7 +319,7 @@ export default function NegotiationScreen() {
             {/* Options */}
             <TouchableOpacity
               style={styles.primaryAcceptBtn}
-              onPress={() => handleAction('Noted! Escrow locked & EcoSmart support notified to disburse funds.')}
+              onPress={() => setActiveScreen('G-B05')}
               activeOpacity={0.8}
             >
               <Text style={styles.primaryAcceptBtnText}>Yes, I handed them over</Text>
@@ -265,10 +327,64 @@ export default function NegotiationScreen() {
 
             <TouchableOpacity
               style={styles.secondaryRejectBtn}
-              onPress={() => handleAction('Understood. Escrow returned to pool and pickup closed.')}
+              onPress={() =>
+                handleAction('Understood. Escrow returned to pool and pickup closed.')
+              }
               activeOpacity={0.7}
             >
               <Text style={styles.secondaryRejectBtnText}>No, I still have them</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* ============================================================ */}
+        {/* G-B05: Dispute Sent & Escrow Locked                          */}
+        {/* ============================================================ */}
+        {activeScreen === 'G-B05' && (
+          <View>
+            <View style={styles.screenHeader}>
+              <Text style={styles.headerContext}>Dispute · REQ-001</Text>
+              <View style={styles.inReviewPill}>
+                <Text style={styles.inReviewPillText}>In review</Text>
+              </View>
+            </View>
+
+            <Text style={styles.screenTitle}>We're looking into your pickup</Text>
+            <Text style={styles.screenSubtitle}>
+              ₦450 is locked safely with EcoSmart while our team checks the scale photo and pickup log.
+            </Text>
+
+            <View style={styles.summaryCard}>
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>1. Problem reported</Text>
+                <Text style={styles.summaryValGreen}>Done ✓</Text>
+              </View>
+              <View style={styles.summaryDivider} />
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>2. EcoSmart reviewing photos</Text>
+                <Text style={styles.summaryValBold}>Within 24h</Text>
+              </View>
+              <View style={styles.summaryDivider} />
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>3. Money paid to your wallet</Text>
+                <Text style={styles.summaryLabel}>Up to ₦450</Text>
+              </View>
+            </View>
+
+            <TouchableOpacity
+              style={styles.primaryAcceptBtn}
+              onPress={() => router.push('/reports' as any)}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.primaryAcceptBtnText}>View resolution in My reports →</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.secondaryRejectBtn}
+              onPress={() => router.push('/mina' as any)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.secondaryRejectBtnText}>Ask Mina a question</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -286,22 +402,25 @@ const styles = StyleSheet.create({
     backgroundColor: '#F8FAFC',
   },
   demoBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
     backgroundColor: '#FEF3C7',
     borderBottomWidth: 1,
     borderBottomColor: '#FDE68A',
+    paddingVertical: 8,
+  },
+  demoScroll: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
     gap: 6,
   },
   demoTitle: {
     fontSize: 12,
     fontWeight: '700',
     color: '#92400E',
+    marginRight: 4,
   },
   demoPill: {
-    paddingHorizontal: 8,
+    paddingHorizontal: 9,
     paddingVertical: 4,
     borderRadius: 12,
     backgroundColor: '#FFFFFF',
@@ -356,6 +475,17 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     color: '#0F1E12',
+  },
+  inReviewPill: {
+    backgroundColor: '#FEF3C7',
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 10,
+  },
+  inReviewPillText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#92400E',
   },
   screenTitle: {
     fontSize: 22,
@@ -437,10 +567,10 @@ const styles = StyleSheet.create({
     color: '#92400E',
   },
   reasonQuote: {
-    fontSize: 14,
-    fontStyle: 'italic',
+    fontSize: 13.5,
     color: '#B45309',
-    paddingLeft: 26,
+    paddingLeft: 24,
+    lineHeight: 19,
   },
   escrowNote: {
     flexDirection: 'row',
@@ -603,12 +733,12 @@ const styles = StyleSheet.create({
     color: '#64748B',
   },
   summaryValBold: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '800',
     color: '#0F1E12',
   },
   summaryValGreen: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '800',
     color: '#2D6A2E',
   },
