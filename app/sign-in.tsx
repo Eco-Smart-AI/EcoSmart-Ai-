@@ -26,6 +26,7 @@ export default function SignInScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [hasError, setHasError] = useState(false);
   const [langSheetVisible, setLangSheetVisible] = useState(false);
+  const [loginRole, setLoginRole] = useState<'household' | 'recycler'>('household');
 
   const isIdentifierValid = identifier.trim().length >= 5;
 
@@ -37,8 +38,8 @@ export default function SignInScreen() {
     }
 
     setHasError(false);
-    // Successful login navigates to the authenticated Home Dashboard (G-H01)
-    router.replace('/home' as any);
+    // Navigate to Household Home (/home) or Recycler Home (/recycler/home)
+    router.replace((loginRole === 'recycler' ? '/recycler/home' : '/home') as any);
   };
 
   return (
@@ -56,6 +57,58 @@ export default function SignInScreen() {
         <View style={styles.headingSection}>
           <Text style={styles.mainTitle}>{t('signIn.title')}</Text>
           <Text style={styles.subTitle}>{t('signIn.subtitle')}</Text>
+
+          {/* Role Toggle for Demo Testing (Household vs Recycler) */}
+          <View
+            style={{
+              flexDirection: 'row',
+              backgroundColor: '#F1F5F9',
+              borderRadius: 18,
+              padding: 3,
+              marginTop: 14,
+              borderWidth: 1,
+              borderColor: '#E2E8F0',
+            }}
+          >
+            <TouchableOpacity
+              style={{
+                paddingHorizontal: 14,
+                paddingVertical: 6,
+                borderRadius: 15,
+                backgroundColor: loginRole === 'household' ? '#2D6A2E' : 'transparent',
+              }}
+              onPress={() => setLoginRole('household')}
+            >
+              <Text
+                style={{
+                  fontSize: 12,
+                  fontWeight: '700',
+                  color: loginRole === 'household' ? '#FFFFFF' : '#475569',
+                }}
+              >
+                Household
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={{
+                paddingHorizontal: 14,
+                paddingVertical: 6,
+                borderRadius: 15,
+                backgroundColor: loginRole === 'recycler' ? '#2D6A2E' : 'transparent',
+              }}
+              onPress={() => setLoginRole('recycler')}
+            >
+              <Text
+                style={{
+                  fontSize: 12,
+                  fontWeight: '700',
+                  color: loginRole === 'recycler' ? '#FFFFFF' : '#475569',
+                }}
+              >
+                Recycler (Musa)
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={styles.formCard}>

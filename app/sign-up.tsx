@@ -77,8 +77,14 @@ export default function SignUpScreen() {
       >
         {/* Headings */}
         <View style={styles.headingSection}>
-          <Text style={styles.mainTitle}>{t('signUp.title')}</Text>
-          <Text style={styles.subTitle}>{t('signUp.subtitle')}</Text>
+          <Text style={styles.mainTitle}>
+            {isHousehold ? t('signUp.title') : 'Create your recycler account'}
+          </Text>
+          <Text style={styles.subTitle}>
+            {isHousehold
+              ? t('signUp.subtitle')
+              : 'Start getting recycling requests and grow your business.'}
+          </Text>
         </View>
 
         {/* Selected Role Badge */}
@@ -101,14 +107,20 @@ export default function SignUpScreen() {
 
         {/* Form Container */}
         <View style={styles.formCard}>
-          {/* 1. Full name */}
+          {/* 1. Full name or business name */}
           <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>{t('signUp.fullName')}</Text>
+            <Text style={styles.inputLabel}>
+              {isHousehold ? t('signUp.fullName') : 'Full name or business name'}
+            </Text>
             <View style={styles.inputBox}>
               <User size={18} color="#94A3B8" />
               <TextInput
                 style={styles.textInput}
-                placeholder={t('signUp.fullNamePlaceholder')}
+                placeholder={
+                  isHousehold
+                    ? t('signUp.fullNamePlaceholder')
+                    : 'e.g. Musa Waste Collection'
+                }
                 placeholderTextColor="#94A3B8"
                 value={fullName}
                 onChangeText={setFullName}

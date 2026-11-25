@@ -8,14 +8,17 @@ import {
   Easing,
   TouchableOpacity,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Check } from 'lucide-react-native';
 import Svg, { Circle, G, Line } from 'react-native-svg';
 
 export default function AccountVerifiedScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams();
   const { t } = useTranslation();
+  const isRecycler = params.role === 'recycler';
+  const nextRoute = isRecycler ? '/recycler/setup' : '/home';
 
   const spinAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.7)).current;
@@ -47,14 +50,13 @@ export default function AccountVerifiedScreen() {
       })
     ).start();
 
-    // 3. Auto navigate to home / dashboard after 3 seconds
+    // 3. Auto navigate to home / business profile setup after 3 seconds
     const timer = setTimeout(() => {
-      // Navigate to Home / Landing or next destination
-      router.replace('/' as any);
+      router.replace(nextRoute as any);
     }, 3200);
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [nextRoute]);
 
   const spin = spinAnim.interpolate({
     inputRange: [0, 1],
@@ -89,7 +91,9 @@ export default function AccountVerifiedScreen() {
 
         {/* Loading Spinner & Status */}
         <View style={styles.loadingSection}>
-          <Text style={styles.settingUpText}>{t('accountVerified.settingUp')}</Text>
+          <Text style={styles.settingUpText}>
+            {isRecycler ? 'Setting up your profile…' : t('accountVerified.settingUp')}
+          </Text>
 
           <Animated.View style={{ transform: [{ rotate: spin }], marginTop: 16 }}>
             <Svg width={36} height={36} viewBox="0 0 36 36">
@@ -110,7 +114,7 @@ export default function AccountVerifiedScreen() {
         {/* Manual continue if user doesn't want to wait */}
         <TouchableOpacity
           style={styles.continueBtn}
-          onPress={() => router.replace('/' as any)}
+          onPress={() => router.replace(nextRoute as any)}
           activeOpacity={0.7}
         >
           <Text style={styles.continueBtnText}>Continue</Text>
