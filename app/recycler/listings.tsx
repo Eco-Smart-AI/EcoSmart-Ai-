@@ -8,6 +8,7 @@ import {
   TextInput,
   SafeAreaView,
   Modal,
+  Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
@@ -546,7 +547,11 @@ export default function RecyclerListingsScreen() {
         onPress={() => router.push('/recycler/mina' as any)}
         activeOpacity={0.85}
       >
-        <Sparkles size={18} color="#2E7D32" />
+        <Image
+          source={require('../../assets/images/mina-avatar.png')}
+          style={{ width: 34, height: 34, borderRadius: 17 }}
+          resizeMode="cover"
+        />
       </TouchableOpacity>
 
       {/* Action Bottom Sheet Modal (Frame 5) */}

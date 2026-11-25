@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   TextInput,
   SafeAreaView,
+  Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
@@ -327,7 +328,11 @@ export default function RecyclerWalletScreen() {
               style={styles.minaCashOutRow}
               onPress={() => router.push('/recycler/mina' as any)}
             >
-              <Sparkles size={16} color="#2E7D32" />
+              <Image
+                source={require('../../assets/images/mina-avatar.png')}
+                style={{ width: 24, height: 24, borderRadius: 12 }}
+                resizeMode="cover"
+              />
               <Text style={styles.minaCashOutText}>Questions about cash out?</Text>
               <Text style={styles.askMinaLink}>Ask Mina →</Text>
             </TouchableOpacity>
@@ -396,7 +401,11 @@ export default function RecyclerWalletScreen() {
           onPress={() => router.push('/recycler/mina' as any)}
           activeOpacity={0.85}
         >
-          <Sparkles size={18} color="#2E7D32" />
+          <Image
+            source={require('../../assets/images/mina-avatar.png')}
+            style={{ width: 34, height: 34, borderRadius: 17 }}
+            resizeMode="cover"
+          />
         </TouchableOpacity>
       )}
 

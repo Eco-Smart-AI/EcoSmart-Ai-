@@ -9,6 +9,7 @@ import {
   SafeAreaView,
   Modal,
   Switch,
+  Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
@@ -459,7 +460,11 @@ export default function RecyclerProfileScreen() {
               onPress={() => router.push('/recycler/mina' as any)}
             >
               <View style={styles.minaAvatarSmall}>
-                <Sparkles size={18} color="#2E7D32" />
+                <Image
+                  source={require('../../assets/images/mina-avatar.png')}
+                  style={{ width: 34, height: 34, borderRadius: 17 }}
+                  resizeMode="cover"
+                />
               </View>
               <View style={{ flex: 1, marginLeft: 12 }}>
                 <Text style={styles.askMinaCardTitle}>Ask Mina</Text>
@@ -666,7 +671,11 @@ export default function RecyclerProfileScreen() {
           onPress={() => router.push('/recycler/mina' as any)}
           activeOpacity={0.85}
         >
-          <Sparkles size={18} color="#2E7D32" />
+          <Image
+            source={require('../../assets/images/mina-avatar.png')}
+            style={{ width: 34, height: 34, borderRadius: 17 }}
+            resizeMode="cover"
+          />
         </TouchableOpacity>
       )}
 

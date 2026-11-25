@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   TextInput,
   SafeAreaView,
+  Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
@@ -118,7 +119,11 @@ export default function RecyclerMinaScreen() {
 
             <View style={styles.centerHero}>
               <View style={styles.minaAvatarLarge}>
-                <Sparkles size={26} color="#2E7D32" />
+                <Image
+                  source={require('../../assets/images/mina-avatar.png')}
+                  style={{ width: 52, height: 52, borderRadius: 26 }}
+                  resizeMode="cover"
+                />
               </View>
               <Text style={styles.heroGreeting}>Hi, I'm Mina 🌿</Text>
               <Text style={styles.heroSub}>
@@ -176,7 +181,11 @@ export default function RecyclerMinaScreen() {
 
             <View style={styles.minaReplyRow}>
               <View style={styles.minaAvatarTiny}>
-                <Sparkles size={14} color="#2E7D32" />
+                <Image
+                  source={require('../../assets/images/mina-avatar.png')}
+                  style={{ width: 26, height: 26, borderRadius: 13 }}
+                  resizeMode="cover"
+                />
               </View>
               <View style={styles.minaBubble}>
                 <Text style={styles.minaBubbleText}>
@@ -222,7 +231,11 @@ export default function RecyclerMinaScreen() {
 
             <View style={styles.minaReplyRow}>
               <View style={styles.minaAvatarTiny}>
-                <Sparkles size={14} color="#2E7D32" />
+                <Image
+                  source={require('../../assets/images/mina-avatar.png')}
+                  style={{ width: 26, height: 26, borderRadius: 13 }}
+                  resizeMode="cover"
+                />
               </View>
               <View style={styles.minaAnswerCard}>
                 <Text style={styles.minaAnswerPara}>
@@ -269,7 +282,11 @@ export default function RecyclerMinaScreen() {
 
             <View style={styles.minaReplyRow}>
               <View style={styles.minaAvatarTiny}>
-                <Sparkles size={14} color="#2E7D32" />
+                <Image
+                  source={require('../../assets/images/mina-avatar.png')}
+                  style={{ width: 26, height: 26, borderRadius: 13 }}
+                  resizeMode="cover"
+                />
               </View>
               <View style={styles.minaAnswerCard}>
                 <Text style={styles.minaAnswerPara}>
@@ -311,7 +328,11 @@ export default function RecyclerMinaScreen() {
         {frame === 'voice' && (
           <View style={[styles.centerHero, { paddingVertical: 100 }]}>
             <View style={styles.minaAvatarLarge}>
-              <Sparkles size={28} color="#2E7D32" />
+              <Image
+                source={require('../../assets/images/mina-avatar.png')}
+                style={{ width: 52, height: 52, borderRadius: 26 }}
+                resizeMode="cover"
+              />
             </View>
             <Text style={styles.heroGreeting}>I'm listening...</Text>
             <Text style={styles.heroSub}>
@@ -330,7 +351,11 @@ export default function RecyclerMinaScreen() {
 
             <View style={styles.minaReplyRow}>
               <View style={styles.minaAvatarTiny}>
-                <Sparkles size={14} color="#2E7D32" />
+                <Image
+                  source={require('../../assets/images/mina-avatar.png')}
+                  style={{ width: 26, height: 26, borderRadius: 13 }}
+                  resizeMode="cover"
+                />
               </View>
               <View style={styles.typingPill}>
                 <Text style={styles.typingDots}>• • •</Text>
@@ -349,7 +374,11 @@ export default function RecyclerMinaScreen() {
 
             <View style={styles.minaReplyRow}>
               <View style={styles.minaAvatarTiny}>
-                <Sparkles size={14} color="#2E7D32" />
+                <Image
+                  source={require('../../assets/images/mina-avatar.png')}
+                  style={{ width: 26, height: 26, borderRadius: 13 }}
+                  resizeMode="cover"
+                />
               </View>
               <View style={styles.typingPill}>
                 <Text style={styles.typingDots}>• • •</Text>
@@ -368,7 +397,11 @@ export default function RecyclerMinaScreen() {
 
             <View style={styles.minaReplyRow}>
               <View style={styles.minaAvatarTiny}>
-                <Sparkles size={14} color="#2E7D32" />
+                <Image
+                  source={require('../../assets/images/mina-avatar.png')}
+                  style={{ width: 26, height: 26, borderRadius: 13 }}
+                  resizeMode="cover"
+                />
               </View>
               <View style={styles.minaAnswerCard}>
                 <Text style={styles.minaAnswerPara}>

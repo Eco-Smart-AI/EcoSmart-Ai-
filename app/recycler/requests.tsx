@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   SafeAreaView,
   Modal,
+  Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
@@ -331,8 +332,11 @@ export default function RecyclerRequestsScreen() {
         onPress={() => router.push('/recycler/mina' as any)}
         activeOpacity={0.8}
       >
-        <Sparkles size={18} color="#2E7D32" />
-        <Text style={styles.floatingMinaText}>Ask Mina</Text>
+        <Image
+          source={require('../../assets/images/mina-avatar.png')}
+          style={{ width: 32, height: 32, borderRadius: 16 }}
+          resizeMode="cover"
+        />
       </TouchableOpacity>
 
       {/* Decline Modal (Screen 07 Frame 1) */}
@@ -592,26 +596,20 @@ const styles = StyleSheet.create({
   },
   floatingMinaBtn: {
     position: 'absolute',
-    bottom: 80,
+    bottom: 82,
     right: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
     backgroundColor: '#FFFFFF',
     borderWidth: 1.5,
     borderColor: '#2E7D32',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
     shadowColor: '#000',
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.12,
     shadowRadius: 6,
     elevation: 4,
-  },
-  floatingMinaText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#2E7D32',
   },
   modalBackdrop: {
     flex: 1,

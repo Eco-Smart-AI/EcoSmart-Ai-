@@ -413,7 +413,11 @@ export default function RecyclerHomeScreen() {
         activeOpacity={0.85}
       >
         <View style={styles.minaAvatarCircle}>
-          <Sparkles size={18} color="#2D6A2E" />
+          <Image
+            source={require('../../assets/images/mina-avatar.png')}
+            style={{ width: 32, height: 32, borderRadius: 16 }}
+            resizeMode="cover"
+          />
         </View>
       </TouchableOpacity>
 
@@ -432,7 +436,11 @@ export default function RecyclerHomeScreen() {
           <View style={styles.minaModalCard}>
             <View style={styles.minaModalHeader}>
               <View style={styles.minaModalAvatar}>
-                <Sparkles size={16} color="#2D6A2E" />
+                <Image
+                  source={require('../../assets/images/mina-avatar.png')}
+                  style={{ width: 28, height: 28, borderRadius: 14 }}
+                  resizeMode="cover"
+                />
               </View>
               <Text style={styles.minaModalTitle}>Meet Mina 👋</Text>
             </View>
@@ -453,7 +461,7 @@ export default function RecyclerHomeScreen() {
                 style={styles.tryItGreenBtn}
                 onPress={() => {
                   setMinaPopupVisible(false);
-                  router.push('/mina' as any);
+                  router.push('/recycler/mina' as any);
                 }}
               >
                 <Text style={styles.tryItGreenText}>Try it</Text>
