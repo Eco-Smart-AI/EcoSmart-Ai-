@@ -116,6 +116,36 @@ export default function RecyclerHomeScreen() {
           >
             <Text style={styles.demoPillText}>03 Setup →</Text>
           </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.demoPill}
+            onPress={() => router.push('/recycler/requests' as any)}
+          >
+            <Text style={styles.demoPillText}>06 Requests →</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.demoPill}
+            onPress={() => router.push('/recycler/pickup' as any)}
+          >
+            <Text style={styles.demoPillText}>04 Pickup →</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.demoPill}
+            onPress={() => router.push('/recycler/pickup-what-ifs' as any)}
+          >
+            <Text style={styles.demoPillText}>05 What-ifs →</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.demoPill}
+            onPress={() => router.push('/recycler/drop-offs' as any)}
+          >
+            <Text style={styles.demoPillText}>07 Drop-offs →</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.demoPill}
+            onPress={() => router.push('/recycler/analytics' as any)}
+          >
+            <Text style={styles.demoPillText}>07 Analytics →</Text>
+          </TouchableOpacity>
         </ScrollView>
       </View>
 

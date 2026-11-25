@@ -4,14 +4,24 @@ import { useRouter, usePathname } from 'expo-router';
 import { Home, Inbox, Package, Wallet, User } from 'lucide-react-native';
 
 interface Props {
-  activeTab?: 'home' | 'requests' | 'listings' | 'wallet' | 'profile';
+  activeTab?:
+    | 'home'
+    | 'requests'
+    | 'listings'
+    | 'wallet'
+    | 'profile'
+    | 'Home'
+    | 'Requests'
+    | 'Listings'
+    | 'Wallet'
+    | 'Profile';
 }
 
 export const RecyclerBottomNavBar: React.FC<Props> = ({ activeTab }) => {
   const router = useRouter();
   const pathname = usePathname();
 
-  let current = activeTab;
+  let current = activeTab ? (activeTab.toLowerCase() as 'home' | 'requests' | 'listings' | 'wallet' | 'profile') : undefined;
   if (!current) {
     if (pathname.includes('/recycler/requests') || pathname.includes('/recycler/pickup')) {
       current = 'requests';
@@ -23,7 +33,8 @@ export const RecyclerBottomNavBar: React.FC<Props> = ({ activeTab }) => {
       pathname.includes('/recycler/profile') ||
       pathname.includes('/recycler/setup') ||
       pathname.includes('/recycler/verification') ||
-      pathname.includes('/recycler/mina')
+      pathname.includes('/recycler/mina') ||
+      pathname.includes('/recycler/analytics')
     ) {
       current = 'profile';
     } else {
@@ -119,3 +130,5 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 });
+
+export default RecyclerBottomNavBar;

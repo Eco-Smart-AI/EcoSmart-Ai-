@@ -26,3 +26,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
 });
+
+export default TopGreenWave;
+
