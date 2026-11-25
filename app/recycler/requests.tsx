@@ -85,6 +85,13 @@ export default function RecyclerRequestsScreen() {
             Done
           </Text>
         </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.tabBtn}
+          onPress={() => router.push('/recycler/system-states' as any)}
+        >
+          <Text style={styles.tabBtnText}>States →</Text>
+        </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -321,7 +328,7 @@ export default function RecyclerRequestsScreen() {
       {/* Floating Ask Mina Button */}
       <TouchableOpacity
         style={styles.floatingMinaBtn}
-        onPress={() => router.push('/mina' as any)}
+        onPress={() => router.push('/recycler/mina' as any)}
         activeOpacity={0.8}
       >
         <Sparkles size={18} color="#2E7D32" />

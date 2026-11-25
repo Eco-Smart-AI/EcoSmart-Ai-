@@ -146,6 +146,36 @@ export default function RecyclerHomeScreen() {
           >
             <Text style={styles.demoPillText}>07 Analytics →</Text>
           </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.demoPill}
+            onPress={() => router.push('/recycler/listings' as any)}
+          >
+            <Text style={styles.demoPillText}>08 Listings →</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.demoPill}
+            onPress={() => router.push('/recycler/wallet' as any)}
+          >
+            <Text style={styles.demoPillText}>09 Wallet →</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.demoPill}
+            onPress={() => router.push('/recycler/profile' as any)}
+          >
+            <Text style={styles.demoPillText}>10 Profile →</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.demoPill}
+            onPress={() => router.push('/recycler/system-states' as any)}
+          >
+            <Text style={styles.demoPillText}>11 System States →</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.demoPill}
+            onPress={() => router.push('/recycler/mina' as any)}
+          >
+            <Text style={styles.demoPillText}>12 Ask Mina →</Text>
+          </TouchableOpacity>
         </ScrollView>
       </View>
 
