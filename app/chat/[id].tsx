@@ -28,7 +28,7 @@ import {
 import Svg, { Path } from 'react-native-svg';
 import { BottomNavBar } from '../../components/common/BottomNavBar';
 
-type ChatMode = 'G-C01' | 'G-C02' | '2.04' | '2.06' | '2.07' | '2.14';
+type ChatMode = 'G-C01' | 'G-C02' | '2.01' | '2.05' | '2.04' | '2.06' | '2.07' | '2.14';
 
 export default function ChatScreen() {
   const router = useRouter();
@@ -137,6 +137,24 @@ export default function ChatScreen() {
           >
             <Text style={[styles.modePillText, mode === 'G-C02' && styles.modePillTextActive]}>
               G-C02 (New time)
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.modePill, mode === '2.01' && styles.modePillActive]}
+            onPress={() => setMode('2.01')}
+          >
+            <Text style={[styles.modePillText, mode === '2.01' && styles.modePillTextActive]}>
+              2.01 (Closed)
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.modePill, mode === '2.05' && styles.modePillActive]}
+            onPress={() => setMode('2.05')}
+          >
+            <Text style={[styles.modePillText, mode === '2.05' && styles.modePillTextActive]}>
+              2.05 (Time picker)
             </Text>
           </TouchableOpacity>
 
@@ -253,6 +271,120 @@ export default function ChatScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView contentContainerStyle={styles.chatScroll} showsVerticalScrollIndicator={false}>
+          {/* 2.01 Contact choice · Closed */}
+          {mode === '2.01' && (
+            <View style={{ gap: 12 }}>
+              <View style={styles.timeProposalCard}>
+                <Text style={styles.timeProposalTitle}>Contact recycler</Text>
+                <Text style={[styles.timeProposalDesc, { marginTop: 4 }]}>
+                  {recyclerName} · Verified · 4.8 · Kubwa, Abuja{'\n'}
+                  Monday–Saturday · 6am–6pm · Sunday closed
+                </Text>
+                <View
+                  style={{
+                    backgroundColor: '#EAF5EA',
+                    borderRadius: 12,
+                    padding: 12,
+                    marginBottom: 12,
+                  }}
+                >
+                  <Text style={{ fontSize: 13, fontWeight: '800', color: '#166534' }}>
+                    {recyclerName} is closed now — send a chat instead
+                  </Text>
+                  <Text style={{ fontSize: 12, color: '#2D6A2E', marginTop: 4 }}>
+                    You can send an enquiry now. Calling is unavailable outside opening hours before a request.
+                  </Text>
+                </View>
+                <View style={styles.proposalActions}>
+                  <TouchableOpacity
+                    style={styles.proposalAcceptBtn}
+                    onPress={() => setMode('G-C01')}
+                  >
+                    <Text style={styles.proposalAcceptText}>Chat</Text>
+                  </TouchableOpacity>
+                  <View style={[styles.proposalSuggestBtn, { opacity: 0.45 }]}>
+                    <Text style={styles.proposalSuggestText}>Call (closed)</Text>
+                  </View>
+                </View>
+              </View>
+            </View>
+          )}
+
+          {/* 2.05 Chat · Suggest time picker */}
+          {mode === '2.05' && (
+            <View style={{ gap: 12 }}>
+              <View style={styles.bubblePartner}>
+                <Text style={styles.bubblePartnerText}>
+                  Proposed pickup: Sat 9 Nov, 14:00–15:00. Does this work for you?
+                </Text>
+                <Text style={styles.bubbleTimePartner}>10:06</Text>
+              </View>
+
+              <View style={[styles.timeProposalCard, { width: '100%', maxWidth: '100%' }]}>
+                <Text style={styles.timeProposalTitle}>Suggest another time</Text>
+                <Text style={[styles.timeProposalDesc, { marginTop: 4 }]}>
+                  Choose a date and a 1-hour pickup window. The hub will need to confirm your suggestion.
+                </Text>
+
+                <View
+                  style={{
+                    backgroundColor: '#F8FAFC',
+                    borderWidth: 1,
+                    borderColor: '#CBD5E1',
+                    borderRadius: 12,
+                    padding: 10,
+                    alignItems: 'center',
+                    marginBottom: 8,
+                  }}
+                >
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: '#2D6A2E' }}>
+                    📅 Sat 9 Nov
+                  </Text>
+                </View>
+
+                <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
+                  <View
+                    style={{
+                      flex: 1,
+                      backgroundColor: '#F8FAFC',
+                      borderWidth: 1,
+                      borderColor: '#CBD5E1',
+                      borderRadius: 12,
+                      padding: 10,
+                      alignItems: 'center',
+                    }}
+                  >
+                    <Text style={{ fontSize: 13, fontWeight: '700', color: '#0F1E12' }}>
+                      🕒 15:00
+                    </Text>
+                  </View>
+                  <View
+                    style={{
+                      flex: 1,
+                      backgroundColor: '#F8FAFC',
+                      borderWidth: 1,
+                      borderColor: '#CBD5E1',
+                      borderRadius: 12,
+                      padding: 10,
+                      alignItems: 'center',
+                    }}
+                  >
+                    <Text style={{ fontSize: 13, fontWeight: '700', color: '#0F1E12' }}>
+                      🕒 16:00
+                    </Text>
+                  </View>
+                </View>
+
+                <TouchableOpacity
+                  style={styles.proposalAcceptBtn}
+                  onPress={handleAcceptTime}
+                >
+                  <Text style={styles.proposalAcceptText}>Suggest time</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+
           {/* G-C01 Stream */}
           {mode === 'G-C01' && (
             <View>

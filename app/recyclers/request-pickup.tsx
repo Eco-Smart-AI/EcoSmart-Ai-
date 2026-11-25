@@ -26,7 +26,7 @@ import { AppHeader } from '../../components/common/AppHeader';
 import { BottomNavBar } from '../../components/common/BottomNavBar';
 import { LanguageBottomSheet } from '../../components/sheets/LanguageBottomSheet';
 
-type RequestStep = 'form' | 'send_failed' | 'waiting' | 'no_response' | 'accepted';
+type RequestStep = 'form' | 'send_failed' | 'waiting' | 'match_sent' | 'no_response' | 'accepted';
 
 export default function RequestPickupScreen() {
   const router = useRouter();
@@ -67,9 +67,10 @@ export default function RequestPickupScreen() {
           {(
             [
               { key: 'form', label: '04 Form' },
-              { key: 'send_failed', label: 'Send failed' },
+              { key: 'send_failed', label: '6.13 Saved draft' },
               { key: 'waiting', label: 'Waiting' },
-              { key: 'no_response', label: 'No response' },
+              { key: 'match_sent', label: '1.09 Match sent' },
+              { key: 'no_response', label: '1.11 No reply' },
               { key: 'accepted', label: 'Accepted' },
             ] as const
           ).map((item) => (
@@ -363,6 +364,97 @@ export default function RequestPickupScreen() {
                 activeOpacity={0.7}
               >
                 <Text style={styles.cancelBtnText}>Cancel request</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* ===================================================== */}
+          {/* 2B. 1.09 Let EcoSmart match me · Sent                 */}
+          {/* ===================================================== */}
+          {step === 'match_sent' && (
+            <View
+              style={{
+                backgroundColor: '#E6F4D7',
+                borderRadius: 24,
+                paddingVertical: 56,
+                paddingHorizontal: 24,
+                alignItems: 'center',
+                justifyContent: 'center',
+                minHeight: 460,
+              }}
+            >
+              <View
+                style={{
+                  width: 64,
+                  height: 64,
+                  borderRadius: 32,
+                  backgroundColor: '#2D6A2E',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: 18,
+                }}
+              >
+                <Sparkles size={28} color="#FFFFFF" />
+              </View>
+              <Text
+                style={{
+                  fontSize: 21,
+                  fontWeight: '900',
+                  color: '#0F1E12',
+                  textAlign: 'center',
+                  marginBottom: 8,
+                }}
+              >
+                Finding a recycler for you
+              </Text>
+              <Text
+                style={{
+                  fontSize: 13.5,
+                  color: '#334155',
+                  textAlign: 'center',
+                  lineHeight: 20,
+                  marginBottom: 16,
+                }}
+              >
+                We sent your request to 4 recyclers near you who pick up about {weightKg} kg. The first to accept takes it.
+              </Text>
+              <Text
+                style={{
+                  fontSize: 12.5,
+                  fontWeight: '700',
+                  color: '#2D6A2E',
+                  marginBottom: 32,
+                }}
+              >
+                We'll tell you as soon as one accepts
+              </Text>
+
+              <TouchableOpacity
+                style={{
+                  backgroundColor: '#2D6A2E',
+                  paddingVertical: 13,
+                  paddingHorizontal: 24,
+                  borderRadius: 24,
+                  marginBottom: 14,
+                }}
+                onPress={() => setStep('accepted')}
+              >
+                <Text style={{ color: '#FFFFFF', fontSize: 13.5, fontWeight: '700' }}>
+                  Simulate: Match found →
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity onPress={() => setStep('form')}>
+                <Text
+                  style={{
+                    fontSize: 13,
+                    fontWeight: '700',
+                    color: '#2D6A2E',
+                    textDecorationLine: 'underline',
+                  }}
+                >
+                  Withdraw request
+                </Text>
               </TouchableOpacity>
             </View>
           )}

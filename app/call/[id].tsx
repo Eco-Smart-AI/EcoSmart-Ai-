@@ -6,6 +6,7 @@ import {
   StyleSheet,
   SafeAreaView,
   ScrollView,
+  Image,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
@@ -16,30 +17,31 @@ import {
   Volume2,
   VolumeX,
   MessageSquare,
-  ShieldCheck,
   Lock,
-  WifiOff,
-  PhoneMissed,
+  ArrowLeft,
   RotateCcw,
 } from 'lucide-react-native';
+import { AppHeader } from '../../components/common/AppHeader';
+import { BottomNavBar } from '../../components/common/BottomNavBar';
 
-type CallDemoState = 'G-K01' | 'G-K02' | 'G-K03' | 'G-K04' | 'G-K05';
+type CallDemoState = 'G-K01' | 'G-K02' | 'G-K03' | '2.11_ended' | '2.12_missed';
 
 export default function CallScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const recyclerName = 'Kubwa Green Hub';
 
-  // Demo call states:
-  // G-K01 (Calling), G-K02 (Connected), G-K03 (Incoming), G-K04 (No answer), G-K05 (Poor connection)
+  // Matches Screens · 07 · Private in-app calls.png:
+  // G-K01 (Call · Calling), G-K02 (Call · Connected), G-K03 (Call · Incoming),
+  // 2.11_ended (2.11 Call · Ended), 2.12_missed (2.12 Call · Missed)
   const [callState, setCallState] = useState<CallDemoState>('G-K01');
   const [isMuted, setIsMuted] = useState(false);
   const [isSpeaker, setIsSpeaker] = useState(false);
-  const [seconds, setSeconds] = useState(42);
+  const [seconds, setSeconds] = useState(252); // 04:12
 
   useEffect(() => {
     let interval: ReturnType<typeof setInterval> | null = null;
-    if (callState === 'G-K02' || callState === 'G-K05') {
+    if (callState === 'G-K02') {
       interval = setInterval(() => {
         setSeconds((prev) => prev + 1);
       }, 1000);
@@ -55,16 +57,16 @@ export default function CallScreen() {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const handleEndCall = () => {
-    router.back();
-  };
-
-  const handleAcceptIncoming = () => {
-    setCallState('G-K02');
-  };
+  const isGreenFullScreen =
+    callState === 'G-K01' || callState === 'G-K02' || callState === 'G-K03';
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView
+      style={[
+        styles.safeArea,
+        { backgroundColor: isGreenFullScreen ? '#1E6B24' : '#FFFFFF' },
+      ]}
+    >
       {/* Top Demo State Switcher */}
       <View style={styles.demoBar}>
         <ScrollView
@@ -72,14 +74,14 @@ export default function CallScreen() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.demoScroll}
         >
-          <Text style={styles.demoTitle}>Call State:</Text>
+          <Text style={styles.demoTitle}>Screen 07:</Text>
           {(
             [
-              { key: 'G-K01', label: 'G-K01 Calling' },
-              { key: 'G-K02', label: 'G-K02 Connected' },
-              { key: 'G-K03', label: 'G-K03 Incoming' },
-              { key: 'G-K04', label: 'No answer' },
-              { key: 'G-K05', label: 'Poor signal' },
+              { key: 'G-K01', label: 'Calling' },
+              { key: 'G-K02', label: 'Connected' },
+              { key: 'G-K03', label: 'Incoming' },
+              { key: '2.11_ended', label: '2.11 Call · Ended' },
+              { key: '2.12_missed', label: '2.12 Call · Missed' },
             ] as const
           ).map((item) => (
             <TouchableOpacity
@@ -100,200 +102,246 @@ export default function CallScreen() {
         </ScrollView>
       </View>
 
-      {/* Main Call View */}
-      <View style={styles.container}>
-        {/* Numbers Hidden / Privacy Header */}
-        <View style={styles.privacyHeader}>
-          <Lock size={14} color="#64748B" />
-          <Text style={styles.privacyHeaderText}>EcoSmart call · numbers hidden</Text>
-        </View>
-
-        {/* Poor connection banner (G-K05) */}
-        {callState === 'G-K05' && (
-          <View style={styles.poorSignalBanner}>
-            <WifiOff size={15} color="#B45309" />
-            <Text style={styles.poorSignalText}>
-              Weak connection · Trying to keep your call clear...
-            </Text>
-          </View>
-        )}
-
-        {/* Center Recycler Information */}
-        <View style={styles.centerInfo}>
-          <View
-            style={[
-              styles.avatarWrap,
-              callState === 'G-K04' && { borderColor: '#FECACA', backgroundColor: '#FEF2F2' },
-            ]}
-          >
-            <View
-              style={[
-                styles.avatarInner,
-                callState === 'G-K04' && { backgroundColor: '#DC2626' },
-              ]}
-            >
-              {callState === 'G-K04' ? (
-                <PhoneMissed size={36} color="#FFFFFF" />
-              ) : (
-                <Text style={styles.avatarText}>KG</Text>
-              )}
+      {isGreenFullScreen ? (
+        /* ============================================================== */
+        /* SOLID GREEN IN-APP CALL SCREENS (Calling / Connected / Incoming) */
+        /* ============================================================== */
+        <View style={styles.greenContainer}>
+          <View style={styles.topSection}>
+            {/* Translucent Privacy Pill */}
+            <View style={styles.greenPrivacyPill}>
+              <Lock size={12} color="#E6F4D7" />
+              <Text style={styles.greenPrivacyText}>EcoSmart call · numbers hidden</Text>
             </View>
+
+            {/* White Circle KG Avatar */}
+            <View style={styles.whiteAvatarCircle}>
+              <Text style={styles.whiteAvatarText}>KG</Text>
+            </View>
+
+            <Text style={styles.greenCallerName}>{recyclerName}</Text>
+
+            {callState === 'G-K01' && (
+              <>
+                <Text style={styles.greenStatusText}>Calling...</Text>
+                <Text style={styles.greenSubHint}>Free in-app call · uses your data</Text>
+              </>
+            )}
+
+            {callState === 'G-K02' && (
+              <Text style={styles.greenTimerText}>{formatTimer(seconds)}</Text>
+            )}
+
+            {callState === 'G-K03' && (
+              <>
+                <Text style={styles.greenStatusText}>is calling you</Text>
+                <Text style={styles.greenSubHint}>About your pickup today</Text>
+              </>
+            )}
           </View>
 
-          <Text style={styles.callerName}>{recyclerName}</Text>
+          {/* Bottom Call Controls */}
+          <View style={styles.controlsArea}>
+            {callState === 'G-K03' ? (
+              /* Incoming Controls: Decline, Message, Accept */
+              <View style={styles.controlsRow}>
+                <View style={styles.controlCol}>
+                  <TouchableOpacity
+                    style={[styles.circleBtn, styles.redEndBtn]}
+                    onPress={() => setCallState('2.12_missed')}
+                    activeOpacity={0.85}
+                  >
+                    <PhoneOff size={24} color="#FFFFFF" />
+                  </TouchableOpacity>
+                  <Text style={styles.greenControlLabel}>Decline</Text>
+                </View>
 
-          {callState === 'G-K01' && <Text style={styles.callStatusText}>Calling…</Text>}
+                <View style={styles.controlCol}>
+                  <TouchableOpacity
+                    style={[styles.circleBtn, styles.translucentGreenBtn]}
+                    onPress={() => router.replace(`/chat/${id || 'kubwa-green-hub'}`)}
+                    activeOpacity={0.85}
+                  >
+                    <MessageSquare size={22} color="#FFFFFF" />
+                  </TouchableOpacity>
+                  <Text style={styles.greenControlLabel}>Message</Text>
+                </View>
 
-          {(callState === 'G-K02' || callState === 'G-K05') && (
-            <Text style={styles.callTimerText}>{formatTimer(seconds)}</Text>
-          )}
+                <View style={styles.controlCol}>
+                  <TouchableOpacity
+                    style={[styles.circleBtn, styles.whiteAcceptBtn]}
+                    onPress={() => setCallState('G-K02')}
+                    activeOpacity={0.85}
+                  >
+                    <Phone size={24} color="#1E6B24" />
+                  </TouchableOpacity>
+                  <Text style={styles.greenControlLabel}>Accept</Text>
+                </View>
+              </View>
+            ) : (
+              /* Calling / Connected Controls: Mute, End, Speaker */
+              <View style={styles.controlsRow}>
+                <View style={styles.controlCol}>
+                  <TouchableOpacity
+                    style={[
+                      styles.circleBtn,
+                      styles.translucentGreenBtn,
+                      isMuted && styles.translucentActiveBtn,
+                    ]}
+                    onPress={() => setIsMuted(!isMuted)}
+                    activeOpacity={0.85}
+                  >
+                    {isMuted ? (
+                      <MicOff size={22} color="#1E6B24" />
+                    ) : (
+                      <Mic size={22} color="#FFFFFF" />
+                    )}
+                  </TouchableOpacity>
+                  <Text style={styles.greenControlLabel}>Mute</Text>
+                </View>
 
-          {callState === 'G-K03' && (
-            <Text style={styles.callStatusText}>Incoming call · Pickup REQ-001</Text>
-          )}
+                <View style={styles.controlCol}>
+                  <TouchableOpacity
+                    style={[styles.circleBtn, styles.redEndBtn]}
+                    onPress={() =>
+                      setCallState(callState === 'G-K01' ? '2.12_missed' : '2.11_ended')
+                    }
+                    activeOpacity={0.85}
+                  >
+                    <PhoneOff size={24} color="#FFFFFF" />
+                  </TouchableOpacity>
+                  <Text style={styles.greenControlLabel}>End</Text>
+                </View>
 
-          {callState === 'G-K04' && (
-            <View style={styles.noAnswerBox}>
-              <Text style={styles.noAnswerTitle}>No answer</Text>
-              <Text style={styles.noAnswerSub}>
-                They might be driving or weighing waste. Send a message so they see it straight away.
+                <View style={styles.controlCol}>
+                  <TouchableOpacity
+                    style={[
+                      styles.circleBtn,
+                      styles.translucentGreenBtn,
+                      isSpeaker && styles.translucentActiveBtn,
+                    ]}
+                    onPress={() => setIsSpeaker(!isSpeaker)}
+                    activeOpacity={0.85}
+                  >
+                    {isSpeaker ? (
+                      <Volume2 size={22} color="#1E6B24" />
+                    ) : (
+                      <VolumeX size={22} color="#FFFFFF" />
+                    )}
+                  </TouchableOpacity>
+                  <Text style={styles.greenControlLabel}>Speaker</Text>
+                </View>
+              </View>
+            )}
+          </View>
+        </View>
+      ) : (
+        /* ============================================================== */
+        /* 2.11 CALL · ENDED & 2.12 CALL · MISSED (White Screens)          */
+        /* ============================================================== */
+        <View style={styles.whiteContainer}>
+          <AppHeader showBack={false} rightAction="bell" />
+
+          <ScrollView
+            contentContainerStyle={styles.whiteScroll}
+            showsVerticalScrollIndicator={false}
+          >
+            {/* ← Call Back Header */}
+            <TouchableOpacity
+              style={styles.backNavRow}
+              onPress={() => router.back()}
+              activeOpacity={0.7}
+            >
+              <ArrowLeft size={18} color="#2D6A2E" strokeWidth={2.4} />
+              <Text style={styles.backNavText}>Call</Text>
+            </TouchableOpacity>
+
+            <Text style={styles.pageMainTitle}>EcoSmart call</Text>
+
+            {/* Center Recycler Summary */}
+            <View style={styles.whiteCenterBlock}>
+              <View style={styles.lightGreenSquareAvatar}>
+                <Text style={styles.lightGreenSquareText}>KG</Text>
+              </View>
+
+              <Text style={styles.whiteCallerName}>{recyclerName}</Text>
+              <Text style={styles.whiteCallerMeta}>Verified · 4.8 · Kubwa, Abuja</Text>
+
+              <Text style={styles.whiteCallOutcomeText}>
+                {callState === '2.11_ended'
+                  ? 'Call ended · 2 min'
+                  : "Kubwa Green Hub didn't answer"}
+              </Text>
+              <Text style={styles.whitePrivacyNote}>
+                Private in-app call · Your numbers stay private
               </Text>
             </View>
-          )}
 
-          <View style={styles.shieldPill}>
-            <ShieldCheck size={14} color="#2D6A2E" />
-            <Text style={styles.shieldPillText}>End-to-end masked call</Text>
-          </View>
-
-          {callState === 'G-K05' && (
-            <TouchableOpacity
-              style={styles.switchToChatPill}
-              onPress={() => router.replace(`/chat/${id || 'kubwa-green-hub'}`)}
-              activeOpacity={0.8}
-            >
-              <MessageSquare size={14} color="#2D6A2E" />
-              <Text style={styles.switchToChatText}>Switch to chat instead</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-
-        {/* Bottom Controls */}
-        <View style={styles.controlsArea}>
-          {callState === 'G-K03' ? (
-            /* Incoming Call Controls: Decline, Message, Accept */
-            <View style={styles.incomingControlsRow}>
-              <View style={styles.controlBtnWrapper}>
-                <TouchableOpacity
-                  style={[styles.roundActionBtn, styles.declineBtn]}
-                  onPress={handleEndCall}
-                  activeOpacity={0.8}
-                >
-                  <PhoneOff size={26} color="#FFFFFF" />
-                </TouchableOpacity>
-                <Text style={styles.controlLabel}>Decline</Text>
-              </View>
-
-              <View style={styles.controlBtnWrapper}>
-                <TouchableOpacity
-                  style={[styles.roundActionBtn, styles.messageBtn]}
-                  onPress={() => router.replace(`/chat/${id || 'kubwa-green-hub'}`)}
-                  activeOpacity={0.8}
-                >
-                  <MessageSquare size={24} color="#0F1E12" />
-                </TouchableOpacity>
-                <Text style={styles.controlLabel}>Message</Text>
-              </View>
-
-              <View style={styles.controlBtnWrapper}>
-                <TouchableOpacity
-                  style={[styles.roundActionBtn, styles.acceptBtn]}
-                  onPress={handleAcceptIncoming}
-                  activeOpacity={0.8}
-                >
-                  <Phone size={26} color="#FFFFFF" />
-                </TouchableOpacity>
-                <Text style={styles.controlLabel}>Accept</Text>
+            {/* Pickup Context Card */}
+            <View style={styles.pickupContextBox}>
+              <Image
+                source={require('../../assets/images/scanned-bottle.png')}
+                style={styles.pickupThumb}
+              />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.pickupContextTitle}>
+                  Accepted · PET bottles · ~3 kg
+                </Text>
+                <Text style={styles.pickupContextSub}>
+                  Musa · Call any time after acceptance, even when the hub is closed
+                </Text>
               </View>
             </View>
-          ) : callState === 'G-K04' ? (
-            /* No Answer Controls: Call Again, Send Message, Close */
-            <View style={styles.noAnswerActionsCol}>
-              <TouchableOpacity
-                style={styles.sendMessagePrimaryBtn}
-                onPress={() => router.replace(`/chat/${id || 'kubwa-green-hub'}`)}
-                activeOpacity={0.85}
-              >
-                <MessageSquare size={18} color="#FFFFFF" />
-                <Text style={styles.sendMessagePrimaryText}>Send a message</Text>
-              </TouchableOpacity>
 
-              <View style={styles.noAnswerBottomRow}>
+            {/* Action Buttons */}
+            {callState === '2.11_ended' ? (
+              <View style={styles.whiteActionsCol}>
                 <TouchableOpacity
-                  style={styles.callAgainOutlineBtn}
+                  style={styles.primaryGreenFullBtn}
+                  onPress={() => setCallState('G-K01')}
+                  activeOpacity={0.85}
+                >
+                  <Phone size={16} color="#FFFFFF" />
+                  <Text style={styles.primaryGreenFullBtnText}>Call again</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.secondaryWhiteFullBtn}
+                  onPress={() => router.replace(`/chat/${id || 'kubwa-green-hub'}`)}
+                  activeOpacity={0.75}
+                >
+                  <MessageSquare size={16} color="#0F1E12" />
+                  <Text style={styles.secondaryWhiteFullBtnText}>Back to chat</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <View style={styles.whiteActionsCol}>
+                <TouchableOpacity
+                  style={styles.secondaryWhiteFullBtn}
+                  onPress={() => router.replace(`/chat/${id || 'kubwa-green-hub'}`)}
+                  activeOpacity={0.75}
+                >
+                  <MessageSquare size={16} color="#2D6A2E" />
+                  <Text style={[styles.secondaryWhiteFullBtnText, { color: '#2D6A2E' }]}>
+                    Send a message in chat
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.tryAgainGhostBtn}
                   onPress={() => setCallState('G-K01')}
                   activeOpacity={0.75}
                 >
-                  <RotateCcw size={16} color="#0F1E12" />
-                  <Text style={styles.callAgainOutlineText}>Call again</Text>
+                  <Phone size={15} color="#2D6A2E" />
+                  <Text style={styles.tryAgainGhostText}>Try again</Text>
                 </TouchableOpacity>
+              </View>
+            )}
+          </ScrollView>
 
-                <TouchableOpacity
-                  style={styles.closeTextBtn}
-                  onPress={handleEndCall}
-                  activeOpacity={0.75}
-                >
-                  <Text style={styles.closeTextBtnLabel}>Close</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          ) : (
-            /* Active Call Controls: Mute, End, Speaker */
-            <View style={styles.activeControlsRow}>
-              <View style={styles.controlBtnWrapper}>
-                <TouchableOpacity
-                  style={[styles.roundActionBtn, isMuted && styles.activeToggleBtn]}
-                  onPress={() => setIsMuted(!isMuted)}
-                  activeOpacity={0.8}
-                >
-                  {isMuted ? (
-                    <MicOff size={24} color="#FFFFFF" />
-                  ) : (
-                    <Mic size={24} color="#0F1E12" />
-                  )}
-                </TouchableOpacity>
-                <Text style={styles.controlLabel}>{isMuted ? 'Muted' : 'Mute'}</Text>
-              </View>
-
-              <View style={styles.controlBtnWrapper}>
-                <TouchableOpacity
-                  style={[styles.roundActionBtn, styles.endCallBtn]}
-                  onPress={handleEndCall}
-                  activeOpacity={0.8}
-                >
-                  <PhoneOff size={28} color="#FFFFFF" />
-                </TouchableOpacity>
-                <Text style={styles.controlLabel}>End</Text>
-              </View>
-
-              <View style={styles.controlBtnWrapper}>
-                <TouchableOpacity
-                  style={[styles.roundActionBtn, isSpeaker && styles.activeToggleBtn]}
-                  onPress={() => setIsSpeaker(!isSpeaker)}
-                  activeOpacity={0.8}
-                >
-                  {isSpeaker ? (
-                    <Volume2 size={24} color="#FFFFFF" />
-                  ) : (
-                    <VolumeX size={24} color="#0F1E12" />
-                  )}
-                </TouchableOpacity>
-                <Text style={styles.controlLabel}>{isSpeaker ? 'Speaker On' : 'Speaker'}</Text>
-              </View>
-            </View>
-          )}
+          <BottomNavBar activeTab="requests" />
         </View>
-      </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -301,293 +349,282 @@ export default function CallScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
   },
   demoBar: {
-    backgroundColor: '#E2E8F0',
+    backgroundColor: '#0F1E12',
     paddingVertical: 8,
-    zIndex: 10,
+    zIndex: 20,
   },
   demoScroll: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: 14,
     gap: 6,
   },
   demoTitle: {
-    fontSize: 12,
+    fontSize: 11.5,
     fontWeight: '700',
-    color: '#334155',
+    color: '#A7F3D0',
     marginRight: 4,
   },
   demoPill: {
-    paddingHorizontal: 9,
+    paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#CBD5E1',
+    backgroundColor: 'rgba(255,255,255,0.12)',
   },
   demoPillActive: {
-    backgroundColor: '#2D6A2E',
-    borderColor: '#2D6A2E',
+    backgroundColor: '#4ADE80',
   },
   demoPillText: {
     fontSize: 11,
     fontWeight: '600',
-    color: '#334155',
+    color: '#E2E8F0',
   },
   demoPillTextActive: {
-    color: '#FFFFFF',
+    color: '#0F1E12',
+    fontWeight: '800',
   },
-  container: {
+
+  /* Solid Green Full-Screen Styles (Calling, Connected, Incoming) */
+  greenContainer: {
     flex: 1,
+    backgroundColor: '#1E6B24',
     justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 24,
-    paddingVertical: 28,
+    paddingTop: 48,
+    paddingBottom: 42,
+  },
+  topSection: {
     alignItems: 'center',
   },
-  privacyHeader: {
+  greenPrivacyPill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: '#EDF2F7',
+    backgroundColor: 'rgba(255, 255, 255, 0.16)',
     paddingHorizontal: 14,
     paddingVertical: 6,
     borderRadius: 16,
+    marginBottom: 28,
   },
-  privacyHeaderText: {
+  greenPrivacyText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#64748B',
+    color: '#F0FDF4',
   },
-  poorSignalBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: '#FEF3C7',
-    borderWidth: 1,
-    borderColor: '#FDE68A',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 14,
-    marginTop: 8,
-  },
-  poorSignalText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#92400E',
-  },
-  centerInfo: {
-    alignItems: 'center',
-    marginTop: 12,
-  },
-  avatarWrap: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: '#EAF5EA',
-    borderWidth: 4,
-    borderColor: '#C7E4B2',
+  whiteAvatarCircle: {
+    width: 84,
+    height: 84,
+    borderRadius: 42,
+    backgroundColor: '#E6F4D7',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 20,
-    shadowColor: '#2D6A2E',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.15,
-    shadowRadius: 14,
-    elevation: 4,
+    marginBottom: 18,
   },
-  avatarInner: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: '#2D6A2E',
-    alignItems: 'center',
-    justifyContent: 'center',
+  whiteAvatarText: {
+    fontSize: 26,
+    fontWeight: '800',
+    color: '#1E6B24',
   },
-  avatarText: {
-    fontSize: 34,
+  greenCallerName: {
+    fontSize: 22,
     fontWeight: '800',
     color: '#FFFFFF',
-  },
-  callerName: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#0F1E12',
     marginBottom: 6,
   },
-  callStatusText: {
-    fontSize: 16,
-    color: '#64748B',
-    marginBottom: 14,
+  greenStatusText: {
+    fontSize: 14,
+    color: '#DCFCE7',
+    marginBottom: 8,
   },
-  callTimerText: {
-    fontSize: 18,
+  greenTimerText: {
+    fontSize: 16,
     fontWeight: '700',
-    color: '#2D6A2E',
-    marginBottom: 14,
+    color: '#DCFCE7',
     fontVariant: ['tabular-nums'],
   },
-  noAnswerBox: {
-    alignItems: 'center',
-    maxWidth: 280,
-    marginBottom: 16,
-  },
-  noAnswerTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: '#DC2626',
-    marginBottom: 4,
-  },
-  noAnswerSub: {
-    fontSize: 13,
-    color: '#475569',
-    textAlign: 'center',
-    lineHeight: 18,
-  },
-  shieldPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: '#EAF5EA',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  shieldPillText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#2D6A2E',
-  },
-  switchToChatPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: 14,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#C7E4B2',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 18,
-  },
-  switchToChatText: {
-    fontSize: 12.5,
-    fontWeight: '700',
-    color: '#2D6A2E',
+  greenSubHint: {
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.72)',
   },
   controlsArea: {
     width: '100%',
-    paddingBottom: 20,
+    paddingHorizontal: 12,
   },
-  incomingControlsRow: {
+  controlsRow: {
     flexDirection: 'row',
     justifyContent: 'space-around',
+    alignItems: 'center',
     width: '100%',
   },
-  activeControlsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    width: '100%',
-  },
-  controlBtnWrapper: {
+  controlCol: {
     alignItems: 'center',
     gap: 8,
   },
-  roundActionBtn: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: '#FFFFFF',
+  circleBtn: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 3,
   },
-  activeToggleBtn: {
-    backgroundColor: '#0F1E12',
-    borderColor: '#0F1E12',
+  translucentGreenBtn: {
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
   },
-  endCallBtn: {
-    backgroundColor: '#DC2626',
-    borderColor: '#DC2626',
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-  },
-  declineBtn: {
-    backgroundColor: '#DC2626',
-    borderColor: '#DC2626',
-  },
-  messageBtn: {
+  translucentActiveBtn: {
     backgroundColor: '#FFFFFF',
-    borderColor: '#CBD5E1',
   },
-  acceptBtn: {
-    backgroundColor: '#2D6A2E',
-    borderColor: '#2D6A2E',
+  redEndBtn: {
+    backgroundColor: '#DC2626',
   },
-  controlLabel: {
+  whiteAcceptBtn: {
+    backgroundColor: '#FFFFFF',
+  },
+  greenControlLabel: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#475569',
+    color: '#F0FDF4',
   },
-  noAnswerActionsCol: {
-    width: '100%',
+
+  /* 2.11 Call Ended & 2.12 Call Missed White Screen Styles */
+  whiteContainer: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  whiteScroll: {
+    paddingHorizontal: 18,
+    paddingTop: 12,
+    paddingBottom: 32,
+  },
+  backNavRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 6,
+  },
+  backNavText: {
+    fontSize: 13.5,
+    fontWeight: '700',
+    color: '#2D6A2E',
+  },
+  pageMainTitle: {
+    fontSize: 22,
+    fontWeight: '900',
+    color: '#0F1E12',
+    marginBottom: 24,
+  },
+  whiteCenterBlock: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  lightGreenSquareAvatar: {
+    width: 72,
+    height: 72,
+    borderRadius: 20,
+    backgroundColor: '#E6F4D7',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 14,
+  },
+  lightGreenSquareText: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#2D6A2E',
+  },
+  whiteCallerName: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#0F1E12',
+    marginBottom: 4,
+  },
+  whiteCallerMeta: {
+    fontSize: 12.5,
+    color: '#64748B',
+    marginBottom: 14,
+  },
+  whiteCallOutcomeText: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#2D6A2E',
+    marginBottom: 4,
+  },
+  whitePrivacyNote: {
+    fontSize: 12,
+    color: '#64748B',
+  },
+  pickupContextBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 12,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    marginBottom: 20,
   },
-  sendMessagePrimaryBtn: {
+  pickupThumb: {
+    width: 44,
+    height: 44,
+    borderRadius: 10,
+    backgroundColor: '#E2E8F0',
+  },
+  pickupContextTitle: {
+    fontSize: 13.5,
+    fontWeight: '800',
+    color: '#0F1E12',
+    marginBottom: 2,
+  },
+  pickupContextSub: {
+    fontSize: 11.5,
+    color: '#64748B',
+    lineHeight: 16,
+  },
+  whiteActionsCol: {
+    gap: 10,
+  },
+  primaryGreenFullBtn: {
     backgroundColor: '#2D6A2E',
-    paddingVertical: 15,
-    borderRadius: 26,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
+    paddingVertical: 15,
+    borderRadius: 26,
   },
-  sendMessagePrimaryText: {
-    color: '#FFFFFF',
-    fontSize: 15,
+  primaryGreenFullBtnText: {
+    fontSize: 14.5,
     fontWeight: '700',
+    color: '#FFFFFF',
   },
-  noAnswerBottomRow: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  callAgainOutlineBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
+  secondaryWhiteFullBtn: {
     backgroundColor: '#FFFFFF',
     borderWidth: 1.5,
     borderColor: '#CBD5E1',
-    paddingVertical: 13,
-    borderRadius: 24,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: 26,
   },
-  callAgainOutlineText: {
+  secondaryWhiteFullBtnText: {
     fontSize: 14,
     fontWeight: '700',
     color: '#0F1E12',
   },
-  closeTextBtn: {
-    flex: 1,
+  tryAgainGhostBtn: {
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#E2E8F0',
-    paddingVertical: 13,
-    borderRadius: 24,
+    gap: 6,
+    paddingVertical: 12,
   },
-  closeTextBtnLabel: {
+  tryAgainGhostText: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#334155',
+    color: '#2D6A2E',
   },
 });
