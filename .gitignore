@@ -19,3 +19,9 @@ extracted_designs.txt
 .DS_Store
 Thumbs.db
 *.log
+
+# ML Model weights & local SQLite training vault
+*.pt
+*.onnx
+backend/ecosmart.db
+backend/training_vault/*.jpg

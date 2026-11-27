@@ -32,7 +32,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
 import numpy as np
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, render_template, request
 from flask_cors import CORS
 from PIL import Image
 
@@ -474,8 +474,14 @@ def calculate_waste_valuation(bucket_id: str, item_count: int) -> Dict[str, Any]
 
 
 # ============================================================================
-# 5. REST API ENDPOINTS
+# 5. REST API ENDPOINTS & STANDALONE HTML/JS DEMO APP
 # ============================================================================
+@app.route("/", methods=["GET"])
+def demo_home():
+    """Serves the standalone Python + HTML + JS YOLOv8 Waste Vision & 1kg Price Demo UI."""
+    return render_template("demo.html")
+
+
 @app.route("/api/health", methods=["GET"])
 def health():
     return jsonify(

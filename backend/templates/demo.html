@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EcoSmart AI — YOLOv8 Nano Trash Detection & 1kg Price Demo</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; background-color: #F4F7F2; color: #0F1E12; }
+  </style>
+</head>
+<body class="min-h-screen pb-16">
+  <!-- Top Navbar -->
+  <header class="bg-white border-b border-slate-200 px-6 py-4 sticky top-0 z-30">
+    <div class="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-emerald-800 text-white flex items-center justify-center font-extrabold text-lg">
+          ♻️
+        </div>
+        <div>
+          <h1 class="text-lg font-extrabold text-slate-900">EcoSmart AI — Waste Vision & 1kg Price Lab</h1>
+          <p class="text-xs text-slate-500">Standalone Python Flask + ONNX Runtime + HTML/JS Test App (Kubwa, Abuja Pilot)</p>
+        </div>
+      </div>
+      <div id="healthBadge" class="px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-emerald-600 animate-pulse"></span>
+        <span>Checking ONNX model...</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-6 mt-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+    <!-- LEFT COLUMN: IMAGE UPLOAD / CAMERA + BOUNDING BOX CANVAS -->
+    <section class="lg:col-span-7 space-y-5">
+      <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+          <div>
+            <h2 class="text-base font-extrabold text-slate-900">1. Scan Waste Photo (640×640 Auto-Resize)</h2>
+            <p class="text-xs text-slate-500">Upload a photo of bottles/cans/cartons or use your webcam</p>
+          </div>
+          <div class="flex gap-2">
+            <label class="cursor-pointer bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold px-3.5 py-2 rounded-lg transition">
+              📁 Upload Photo
+              <input id="fileInput" type="file" accept="image/*" class="hidden" />
+            </label>
+            <button id="cameraBtn" class="bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold px-3.5 py-2 rounded-lg transition">
+              📷 Webcam
+            </button>
+          </div>
+        </div>
+
+        <!-- Webcam live preview (hidden until clicked) -->
+        <div id="webcamBox" class="hidden mb-4 bg-slate-900 rounded-xl overflow-hidden relative">
+          <video id="webcamVideo" autoplay playsinline class="w-full max-h-80 object-contain"></video>
+          <div class="p-3 bg-slate-900/80 flex justify-center gap-3">
+            <button id="snapBtn" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2 rounded-lg">
+              ⚡ Snap & Run YOLOv8
+            </button>
+            <button id="closeCamBtn" class="bg-slate-700 text-white text-xs font-bold px-3 py-2 rounded-lg">
+              Cancel
+            </button>
+          </div>
+        </div>
+
+        <!-- 640x640 Canvas where image & YOLOv8 bounding boxes are drawn -->
+        <div class="bg-slate-900 rounded-xl overflow-hidden flex items-center justify-center relative min-h-[320px]">
+          <canvas id="scanCanvas" width="640" height="640" class="max-w-full max-h-[420px] object-contain"></canvas>
+          <div id="canvasPlaceholder" class="absolute inset-0 flex flex-col items-center justify-center text-slate-400 p-6 text-center pointer-events-none">
+            <div class="text-4xl mb-2">🧴🥫📦</div>
+            <p class="text-sm font-bold text-slate-200">Drop or upload a waste photo to run YOLOv8 ONNX detection</p>
+            <p class="text-xs text-slate-400 mt-1">Resizes to 640×640 (~45 KB) in the browser before sending to Python</p>
+          </div>
+        </div>
+
+        <!-- Detection Stats Strip -->
+        <div class="mt-3 flex flex-wrap items-center justify-between text-xs text-slate-500 gap-2 pt-2 border-t border-slate-100">
+          <div>Inference speed: <strong id="infSpeed" class="text-slate-800">— ms</strong></div>
+          <div>Compressed size: <strong id="imgSize" class="text-slate-800">— KB</strong></div>
+          <div>Detections: <strong id="detCountBadge" class="text-emerald-700">0 boxes</strong></div>
+        </div>
+
+        <!-- Quick Simulator Buttons (Test 1 bottle, 2 bottles, 1kg, 3kg without needing a photo) -->
+        <div class="mt-4 pt-4 border-t border-slate-200">
+          <div class="text-xs font-bold text-slate-700 mb-2">
+            Quick Math Simulator (Test different counts or materials immediately):
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button onclick="simulateScan('pet', 1)" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-emerald-50 text-xs font-semibold text-slate-700 border border-slate-200">
+              1 PET Bottle (20g)
+            </button>
+            <button onclick="simulateScan('pet', 2)" class="px-3 py-1.5 rounded-lg bg-emerald-50 text-xs font-bold text-emerald-800 border border-emerald-300">
+              2 PET Bottles (0.04 kg)
+            </button>
+            <button onclick="simulateScan('pet', 25)" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-emerald-50 text-xs font-semibold text-slate-700 border border-slate-200">
+              25 PET Bottles (0.5 kg)
+            </button>
+            <button onclick="simulateScan('pet', 50)" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-emerald-50 text-xs font-semibold text-slate-700 border border-slate-200">
+              50 PET Bottles (1.0 kg)
+            </button>
+            <button onclick="simulateScan('cans', 10)" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-emerald-50 text-xs font-semibold text-slate-700 border border-slate-200">
+              10 Aluminium Cans (0.15 kg)
+            </button>
+            <button onclick="simulateScan('sachet', 40)" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-emerald-50 text-xs font-semibold text-slate-700 border border-slate-200">
+              40 Pure Water Sachets
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Raw Detections List -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+        <h3 class="text-sm font-extrabold text-slate-900 mb-2">YOLOv8 Bounding Box Detections</h3>
+        <div id="detectionsList" class="text-xs text-slate-500 space-y-1.5">
+          Upload an image or click a simulator button above to see detections.
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT COLUMN: BOTTLE -> 1KG CALCULATOR, PRICE & CUSTOM NIGERIAN NAME LEARNING -->
+    <section class="lg:col-span-5 space-y-5">
+      <!-- Valuation & 1kg Conversion Card -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+        <div class="flex items-start justify-between">
+          <div>
+            <span class="text-[11px] font-extrabold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full">
+              2. Bottle-to-1kg & Price Engine
+            </span>
+            <h2 id="matTitle" class="text-xl font-extrabold text-slate-900 mt-2">Clear PET Plastic Bottles</h2>
+            <p id="matExamples" class="text-xs text-slate-500">Eva, Coke, Pepsi, Bigi, Cway water & soda bottles</p>
+          </div>
+          <div class="text-right">
+            <div class="text-xs text-slate-400">Kubwa Rate</div>
+            <div id="ratePerKg" class="text-lg font-extrabold text-emerald-700">₦120/kg</div>
+          </div>
+        </div>
+
+        <!-- 3 Big Metric Tiles -->
+        <div class="grid grid-cols-3 gap-3">
+          <div class="bg-slate-50 border border-slate-200 rounded-xl p-3">
+            <div class="text-[11px] text-slate-500">Counted Items</div>
+            <div id="countVal" class="text-xl font-extrabold text-slate-900 mt-0.5">2 bottles</div>
+            <div id="unitGrams" class="text-[11px] text-slate-400">~20g each</div>
+          </div>
+          <div class="bg-slate-50 border border-slate-200 rounded-xl p-3">
+            <div class="text-[11px] text-slate-500">Actual Weight</div>
+            <div id="weightVal" class="text-xl font-extrabold text-slate-900 mt-0.5">0.04 kg</div>
+            <div id="unitsPerKgNote" class="text-[11px] text-emerald-700 font-bold">50 = 1 kg</div>
+          </div>
+          <div class="bg-emerald-900 text-white rounded-xl p-3">
+            <div class="text-[11px] text-emerald-200">Est. Value</div>
+            <div id="payoutVal" class="text-xl font-extrabold mt-0.5">₦5</div>
+            <div id="oneKgValueNote" class="text-[11px] text-emerald-200">1 kg = ₦120</div>
+          </div>
+        </div>
+
+        <!-- Progress bar towards 1 kg -->
+        <div class="bg-emerald-50/70 border border-emerald-200 rounded-xl p-3.5 space-y-2">
+          <div class="flex justify-between text-xs font-bold text-emerald-950">
+            <span>Progress to 1 kg (<span id="progRatio">2 / 50 bottles</span>)</span>
+            <span id="progPct">4%</span>
+          </div>
+          <div class="w-full h-2.5 bg-white rounded-full overflow-hidden border border-emerald-200">
+            <div id="progBar" class="h-full bg-emerald-600 transition-all duration-300" style="width: 4%"></div>
+          </div>
+          <p id="guidanceText" class="text-xs text-emerald-900 leading-relaxed pt-1">
+            We detected 2 bottles (~0.04 kg ≈ ₦5). About 50 bottles make 1 kg (₦120). Add 48 more bottles to reach 1 kg, or 148 more to reach the 3 kg home pickup minimum!
+          </p>
+        </div>
+      </div>
+
+      <!-- Custom Nigerian Name Active-Learning Card -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-3">
+        <div>
+          <span class="text-[11px] font-extrabold uppercase tracking-wider text-amber-800 bg-amber-100 px-2.5 py-1 rounded-full">
+            3. Teach Local Nigerian Names (Active Learning)
+          </span>
+          <h3 class="text-base font-extrabold text-slate-900 mt-2">What do people call this in your area?</h3>
+          <p class="text-xs text-slate-500">
+            Saves the custom Nigerian name + image + bounding boxes into SQLite for future YOLO training.
+          </p>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Custom Nigerian Name</label>
+          <input
+            id="customNameInput"
+            type="text"
+            placeholder="e.g. Pure water nylon, Eva rubber, Maltina pan, Gongon..."
+            class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs"
+          />
+          <div class="flex flex-wrap gap-1.5 mt-2">
+            <button onclick="fillAlias('Pure water nylon', 'sachet')" class="text-[11px] px-2.5 py-1 rounded-full bg-slate-100 hover:bg-emerald-50 text-slate-700 font-medium">Pure water nylon</button>
+            <button onclick="fillAlias('Eva rubber', 'pet')" class="text-[11px] px-2.5 py-1 rounded-full bg-slate-100 hover:bg-emerald-50 text-slate-700 font-medium">Eva rubber</button>
+            <button onclick="fillAlias('Hypo gallon', 'hdpe')" class="text-[11px] px-2.5 py-1 rounded-full bg-slate-100 hover:bg-emerald-50 text-slate-700 font-medium">Hypo gallon</button>
+            <button onclick="fillAlias('Maltina pan / Gongon', 'cans')" class="text-[11px] px-2.5 py-1 rounded-full bg-slate-100 hover:bg-emerald-50 text-slate-700 font-medium">Maltina pan / Gongon</button>
+            <button onclick="fillAlias('Indomie carton', 'carton')" class="text-[11px] px-2.5 py-1 rounded-full bg-slate-100 hover:bg-emerald-50 text-slate-700 font-medium">Indomie carton</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Base Material Category</label>
+            <select id="bucketSelect" class="w-full border border-slate-300 rounded-lg px-2.5 py-2 text-xs bg-white">
+              <option value="pet">PET Plastic Bottles (₦120/kg · 50 = 1kg)</option>
+              <option value="hdpe">HDPE Hard Plastic (₦105/kg · 17 = 1kg)</option>
+              <option value="cans">Aluminium Cans (₦600/kg · 67 = 1kg)</option>
+              <option value="carton">Cardboard Cartons (₦60/kg · 8 = 1kg)</option>
+              <option value="sachet">Pure Water Sachets (₦50/kg · 333 = 1kg)</option>
+              <option value="glass">Glass Bottles (₦30/kg · 4 = 1kg)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">How Many Items in Photo?</label>
+            <input id="countInput" type="number" min="1" value="2" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs" />
+          </div>
+        </div>
+
+        <button
+          onclick="saveCustomLabel()"
+          class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs py-2.5 rounded-lg transition"
+        >
+          💾 Save Custom Nigerian Name & Recalculate
+        </button>
+        <div id="saveToast" class="hidden text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-lg p-2.5"></div>
+      </div>
+
+      <!-- Learned Nigerian Names Dictionary Table -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-sm font-extrabold text-slate-900">Learned Nigerian Names Dictionary (SQLite)</h3>
+          <button onclick="loadAliases()" class="text-xs text-emerald-700 font-bold">↻ Refresh</button>
+        </div>
+        <div id="aliasesTable" class="space-y-1.5 max-h-48 overflow-y-auto text-xs"></div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const canvas = document.getElementById('scanCanvas');
+    const ctx = canvas.getContext('2d');
+    let lastSavedFilename = '';
+    let lastDetections = [];
+    let webcamStream = null;
+
+    // 1. Check backend health
+    async function checkHealth() {
+      try {
+        const res = await fetch('/api/health');
+        const data = await res.json();
+        const badge = document.getElementById('healthBadge');
+        if (data.onnx_loaded) {
+          badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-600"></span><span>ONNX Loaded · ${data.model_repo} (${data.classes_count} classes)</span>`;
+        } else {
+          badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500"></span><span>Heuristic Mode (run download_and_export_onnx.py)</span>`;
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    // 2. Render Valuation UI
+    function updateValuationUI(val, detections = [], infMs = null) {
+      if (infMs !== null) document.getElementById('infSpeed').textContent = `${infMs} ms`;
+      document.getElementById('detCountBadge').textContent = `${detections.length || val.detected_count} items`;
+
+      document.getElementById('matTitle').textContent = val.custom_nigerian_name
+        ? `${val.custom_nigerian_name} (${val.material_name})`
+        : val.material_name;
+      document.getElementById('matExamples').textContent = val.local_examples;
+      document.getElementById('ratePerKg').textContent = `₦${val.rate_per_kg_naira}/kg`;
+
+      document.getElementById('countVal').textContent = `${val.detected_count} ${val.unit_label}`;
+      document.getElementById('unitGrams').textContent = `~${val.unit_weight_grams}g each`;
+      document.getElementById('weightVal').textContent = `${val.estimated_weight_kg} kg`;
+      document.getElementById('unitsPerKgNote').textContent = `${val.units_per_1kg} ${val.unit_label} = 1 kg`;
+      document.getElementById('payoutVal').textContent = `₦${val.estimated_payout_naira.toLocaleString()}`;
+      document.getElementById('oneKgValueNote').textContent = `1 kg = ₦${val.price_for_1kg_naira}`;
+
+      const pct = Math.min(100, Math.round((val.detected_count / val.units_per_1kg) * 100));
+      document.getElementById('progRatio').textContent = `${val.detected_count} / ${val.units_per_1kg} ${val.unit_label}`;
+      document.getElementById('progPct').textContent = `${pct}%`;
+      document.getElementById('progBar').style.width = `${Math.max(4, pct)}%`;
+      document.getElementById('guidanceText').textContent = val.guidance_message;
+
+      document.getElementById('bucketSelect').value = val.bucket_id;
+      document.getElementById('countInput').value = val.detected_count;
+
+      // Render bounding boxes on canvas
+      if (detections && detections.length > 0) {
+        ctx.lineWidth = 3;
+        ctx.font = 'bold 14px Inter, sans-serif';
+        detections.forEach((d) => {
+          const [x1, y1, x2, y2] = d.box_640;
+          ctx.strokeStyle = '#16A34A';
+          ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+          const label = `${d.raw_class_name} (${Math.round(d.confidence * 100)}%)`;
+          const textWidth = ctx.measureText(label).width;
+          ctx.fillStyle = '#16A34A';
+          ctx.fillRect(x1, Math.max(0, y1 - 22), textWidth + 12, 22);
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fillText(label, x1 + 6, Math.max(15, y1 - 6));
+        });
+
+        document.getElementById('detectionsList').innerHTML = detections
+          .map(
+            (d, i) =>
+              `<div class="flex justify-between items-center bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
+                <span><strong>#${i + 1} ${d.raw_class_name}</strong> → mapped to <code class="text-emerald-700 font-bold">${d.bucket_id.toUpperCase()}</code></span>
+                <span class="font-bold text-emerald-700">${Math.round(d.confidence * 100)}% conf</span>
+              </div>`
+          )
+          .join('');
+      } else {
+        document.getElementById('detectionsList').innerHTML =
+          `<div class="text-slate-500">Counted <strong>${val.detected_count} ${val.unit_label}</strong> in category <strong>${val.material_name}</strong>.</div>`;
+      }
+    }
+
+    // 3. Process uploaded or snapped image -> 640x640 JPEG -> POST /api/scan
+    function processImageSource(imgElement) {
+      document.getElementById('canvasPlaceholder').classList.add('hidden');
+      ctx.clearRect(0, 0, 640, 640);
+      ctx.drawImage(imgElement, 0, 0, 640, 640);
+
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
+      const sizeKb = Math.round((dataUrl.length * 3) / 4 / 1024);
+      document.getElementById('imgSize').textContent = `${sizeKb} KB`;
+
+      fetch('/api/scan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image_base64: dataUrl, fallback_bucket: 'pet', fallback_count: 2 }),
+      })
+        .then((r) => r.json())
+        .then((res) => {
+          if (res.success) {
+            lastSavedFilename = res.saved_image || '';
+            lastDetections = res.detections || [];
+            updateValuationUI(res.valuation, res.detections, res.inference_time_ms);
+          }
+        });
+    }
+
+    document.getElementById('fileInput').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const img = new Image();
+      img.onload = () => processImageSource(img);
+      img.src = URL.createObjectURL(file);
+    });
+
+    // 4. Webcam handlers
+    document.getElementById('cameraBtn').addEventListener('click', async () => {
+      try {
+        webcamStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+        const video = document.getElementById('webcamVideo');
+        video.srcObject = webcamStream;
+        document.getElementById('webcamBox').classList.remove('hidden');
+      } catch (err) {
+        alert('Could not access camera: ' + err.message);
+      }
+    });
+
+    document.getElementById('snapBtn').addEventListener('click', () => {
+      const video = document.getElementById('webcamVideo');
+      processImageSource(video);
+      if (webcamStream) webcamStream.getTracks().forEach((t) => t.stop());
+      document.getElementById('webcamBox').classList.add('hidden');
+    });
+
+    document.getElementById('closeCamBtn').addEventListener('click', () => {
+      if (webcamStream) webcamStream.getTracks().forEach((t) => t.stop());
+      document.getElementById('webcamBox').classList.add('hidden');
+    });
+
+    // 5. Quick simulator without image
+    async function simulateScan(bucket, count) {
+      const res = await fetch('/api/scan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fallback_bucket: bucket, fallback_count: count }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        updateValuationUI(data.valuation, [], data.inference_time_ms);
+      }
+    }
+
+    // 6. Active learning: Fill & Save Custom Nigerian Name
+    function fillAlias(name, bucket) {
+      document.getElementById('customNameInput').value = name;
+      document.getElementById('bucketSelect').value = bucket;
+    }
+
+    async function saveCustomLabel() {
+      const customName = document.getElementById('customNameInput').value.trim();
+      const bucketId = document.getElementById('bucketSelect').value;
+      const itemCount = parseInt(document.getElementById('countInput').value || '2', 10);
+
+      const res = await fetch('/api/scan/custom-label', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          custom_name: customName,
+          bucket_id: bucketId,
+          item_count: itemCount,
+          image_filename: lastSavedFilename,
+          detections: lastDetections,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        updateValuationUI(data.valuation, lastDetections);
+        const toast = document.getElementById('saveToast');
+        toast.textContent = `✓ ${data.message}`;
+        toast.classList.remove('hidden');
+        setTimeout(() => toast.classList.add('hidden'), 4000);
+        loadAliases();
+      }
+    }
+
+    async function loadAliases() {
+      const res = await fetch('/api/scan/aliases');
+      const data = await res.json();
+      const container = document.getElementById('aliasesTable');
+      container.innerHTML = (data.aliases || [])
+        .map(
+          (a) =>
+            `<div class="flex justify-between items-center px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-100">
+              <span><strong>"${a.custom_name}"</strong> → <span class="uppercase text-emerald-700 font-bold">${a.bucket_id}</span></span>
+              <span class="text-slate-400 font-semibold">${a.usage_count}× used</span>
+            </div>`
+        )
+        .join('');
+    }
+
+    checkHealth();
+    loadAliases();
+  </script>
+</body>
+</html>

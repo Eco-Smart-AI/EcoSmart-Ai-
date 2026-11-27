@@ -19,12 +19,11 @@ BASE_DIR = Path(__file__).resolve().parent
 MODELS_DIR = BASE_DIR / "models"
 MODELS_DIR.mkdir(parents=True, exist_ok=True)
 
-# Direct Hugging Face URL for arnabdhar/YOLOv8-nano-trash-detection
-HF_REPO_ID = "arnabdhar/YOLOv8-nano-trash-detection"
+# Direct Hugging Face URLs for public YOLOv8 Nano Trash / Waste Detection models
 HF_Candidate_URLS = [
-    f"https://huggingface.co/{HF_REPO_ID}/resolve/main/best.pt",
-    f"https://huggingface.co/{HF_REPO_ID}/resolve/main/yolov8n-trash.pt",
-    f"https://huggingface.co/{HF_REPO_ID}/resolve/main/model.pt",
+    "https://huggingface.co/kendrickfff/waste-classification-yolov8-ken/resolve/main/yolov8n-waste-12cls-best.pt",
+    "https://huggingface.co/HrutikAdsare/waste-detection-yolov8/resolve/main/best.pt",
+    "https://huggingface.co/ShihoAI/yolov8s-garbage-detection/resolve/main/best_yolov8s_final.pt",
 ]
 
 LOCAL_PT_PATH = MODELS_DIR / "yolov8n_trash_best.pt"
@@ -37,7 +36,7 @@ def download_hf_weights() -> Path:
         print(f"[✓] Found existing weights at: {LOCAL_PT_PATH}")
         return LOCAL_PT_PATH
 
-    print(f"[*] Downloading {HF_REPO_ID} from Hugging Face...")
+    print("[*] Downloading YOLOv8 Nano Waste Detection weights from Hugging Face...")
     headers = {"User-Agent": "Mozilla/5.0 (EcoSmart-AI-Model-Exporter)"}
 
     for url in HF_Candidate_URLS:
