@@ -12,6 +12,7 @@ import {
 import { useRouter } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
 import {
+  ArrowLeft,
   Bell,
   MapPin,
   Wallet,
@@ -40,23 +41,33 @@ export default function RecyclerHomeScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      {/* Top White Header with Brand Logo & Bell */}
+      {/* Top White Header with Back Button, Brand Logo & Bell */}
       <View style={styles.topHeader}>
-        <TouchableOpacity
-          style={styles.brandRow}
-          onPress={() => router.push('/choose-account' as any)}
-          activeOpacity={0.8}
-        >
-          <Image
-            source={require('../../assets/images/logo.png')}
-            style={styles.logoImage}
-            resizeMode="contain"
-          />
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={{ width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' }}
+            activeOpacity={0.7}
+            accessibilityLabel="Go back"
+          >
+            <ArrowLeft size={20} color="#0F1E12" strokeWidth={2.4} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.brandRow}
+            onPress={() => router.push('/choose-account' as any)}
+            activeOpacity={0.8}
+          >
+            <Image
+              source={require('../../assets/images/logo.png')}
+              style={styles.logoImage}
+              resizeMode="contain"
+            />
+          </TouchableOpacity>
+        </View>
 
         <TouchableOpacity
           style={styles.bellBtn}
-          onPress={() => router.push('/recycler/requests' as any)}
+          onPress={() => router.push('/recycler/notifications' as any)}
           activeOpacity={0.7}
         >
           <Bell size={21} color="#0F1E12" strokeWidth={2} />

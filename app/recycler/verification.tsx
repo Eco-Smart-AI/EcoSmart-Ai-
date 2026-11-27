@@ -63,7 +63,11 @@ export default function RecyclerVerificationScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <AppHeader showBack={false} rightAction="bell" />
+      <AppHeader
+        showBack={true}
+        rightAction="bell"
+        onPressBell={() => router.push('/recycler/notifications' as any)}
+      />
 
       {/* Top Demo State Switcher covering all 16 frames of Screens · 02 · Verification.png */}
       <View style={styles.demoBar}>

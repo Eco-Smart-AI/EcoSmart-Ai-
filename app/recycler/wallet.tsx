@@ -26,7 +26,7 @@ import {
   Sparkles,
   Building2,
 } from 'lucide-react-native';
-import TopGreenWave from '../../components/common/TopGreenWave';
+import { AppHeader } from '../../components/common/AppHeader';
 import RecyclerBottomNavBar from '../../components/common/RecyclerBottomNavBar';
 
 type WalletViewState = 'overview' | 'top_up' | 'cash_out' | 'cash_out_done';
@@ -51,9 +51,13 @@ export default function RecyclerWalletScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <TopGreenWave />
+      <AppHeader
+        showBack={true}
+        rightAction="bell"
+        onPressBell={() => router.push('/recycler/notifications' as any)}
+      />
 
-      {/* Header */}
+      {/* Sub-Header below green wave */}
       <View style={styles.header}>
         {viewState === 'overview' ? (
           <Text style={styles.headerTitle}>Wallet</Text>
@@ -63,20 +67,13 @@ export default function RecyclerWalletScreen() {
               onPress={() => setViewState('overview')}
               style={styles.backBtn}
             >
-              <ArrowLeft size={22} color="#1F2937" />
+              <ArrowLeft size={20} color="#1F2937" />
             </TouchableOpacity>
             <Text style={styles.headerTitleSmall}>
               {viewState === 'top_up' ? 'Top up' : 'Cash out'}
             </Text>
           </View>
         )}
-
-        <TouchableOpacity
-          style={styles.bellBtn}
-          onPress={() => router.push('/recycler/notifications' as any)}
-        >
-          <Bell size={20} color="#1F2937" />
-        </TouchableOpacity>
       </View>
 
       {/* Demo Switcher Pills */}

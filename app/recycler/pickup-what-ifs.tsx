@@ -23,7 +23,7 @@ import {
   TrendingDown,
   Info,
 } from 'lucide-react-native';
-import TopGreenWave from '../../components/common/TopGreenWave';
+import { AppHeader } from '../../components/common/AppHeader';
 import RecyclerBottomNavBar from '../../components/common/RecyclerBottomNavBar';
 
 type WhatIfScenario =
@@ -59,16 +59,20 @@ export default function RecyclerPickupWhatIfsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <TopGreenWave />
+      <AppHeader
+        showBack={true}
+        rightAction="bell"
+        onPressBell={() => router.push('/recycler/notifications' as any)}
+      />
 
-      {/* Header */}
+      {/* Sub-Header below green wave */}
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => router.push('/recycler/pickup' as any)}
           style={styles.headerBackBtn}
           activeOpacity={0.7}
         >
-          <ArrowLeft size={22} color="#1F2937" />
+          <ArrowLeft size={20} color="#1F2937" />
         </TouchableOpacity>
         <View style={styles.headerTitleWrap}>
           <Text style={styles.headerTitle}>
@@ -78,8 +82,8 @@ export default function RecyclerPickupWhatIfsScreen() {
               ? 'Propose a new rate'
               : 'Pickup · Musa A.'}
           </Text>
-          <Text style={styles.headerSub}>REQ-001</Text>
         </View>
+        <Text style={styles.headerSub}>REQ-001</Text>
       </View>
 
       {/* Interactive Scenario Switcher Pills */}

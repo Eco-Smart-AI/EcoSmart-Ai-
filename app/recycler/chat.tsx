@@ -19,7 +19,7 @@ import {
   Send,
   Lock,
 } from 'lucide-react-native';
-import TopGreenWave from '../../components/common/TopGreenWave';
+import { AppHeader } from '../../components/common/AppHeader';
 
 export default function RecyclerChatScreen() {
   const router = useRouter();
@@ -75,9 +75,13 @@ export default function RecyclerChatScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <TopGreenWave />
+      <AppHeader
+        showBack={true}
+        rightAction="bell"
+        onPressBell={() => router.push('/recycler/notifications' as any)}
+      />
 
-      {/* Header */}
+      {/* Sub-Header below green wave */}
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => router.push('/recycler/requests' as any)}

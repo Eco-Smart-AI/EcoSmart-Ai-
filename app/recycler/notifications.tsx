@@ -16,7 +16,7 @@ import {
   ShieldCheck,
   Star,
 } from 'lucide-react-native';
-import TopGreenWave from '../../components/common/TopGreenWave';
+import { AppHeader } from '../../components/common/AppHeader';
 import RecyclerBottomNavBar from '../../components/common/RecyclerBottomNavBar';
 
 export default function RecyclerNotificationsScreen() {
@@ -24,15 +24,19 @@ export default function RecyclerNotificationsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <TopGreenWave />
+      <AppHeader
+        showBack={true}
+        rightAction="bell"
+        onPressBell={() => router.push('/recycler/notifications' as any)}
+      />
 
-      {/* Header */}
+      {/* Sub-Header below green wave */}
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => router.push('/recycler/home' as any)}
           style={styles.backBtn}
         >
-          <ArrowLeft size={22} color="#1F2937" />
+          <ArrowLeft size={20} color="#1F2937" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Notifications</Text>
       </View>

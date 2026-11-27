@@ -28,7 +28,7 @@ import {
   Sparkles,
   CheckCircle2,
 } from 'lucide-react-native';
-import TopGreenWave from '../../components/common/TopGreenWave';
+import { AppHeader } from '../../components/common/AppHeader';
 import RecyclerBottomNavBar from '../../components/common/RecyclerBottomNavBar';
 
 type ListingsViewMode =
@@ -259,14 +259,18 @@ export default function RecyclerListingsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <TopGreenWave />
+      <AppHeader
+        showBack={true}
+        rightAction="bell"
+        onPressBell={() => router.push('/recycler/notifications' as any)}
+      />
 
-      {/* Top Header */}
+      {/* Sub-Header below green wave */}
       <View style={styles.header}>
         {viewMode === 'new_listing' || viewMode === 'buy_offer' ? (
           <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
             <TouchableOpacity onPress={() => setViewMode('list')} style={styles.backBtn}>
-              <ArrowLeft size={22} color="#1F2937" />
+              <ArrowLeft size={20} color="#1F2937" />
             </TouchableOpacity>
             <Text style={styles.headerTitleSmall}>
               {viewMode === 'new_listing' ? 'New listing' : 'Buy offer'}
@@ -276,22 +280,14 @@ export default function RecyclerListingsScreen() {
           <Text style={styles.headerTitle}>Listings</Text>
         )}
 
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-          {(viewMode === 'list' || viewMode === 'published_toast') && (
-            <TouchableOpacity
-              onPress={() => setViewMode('new_listing')}
-              style={styles.addHeaderLink}
-            >
-              <Text style={styles.addHeaderLinkText}>+ Add</Text>
-            </TouchableOpacity>
-          )}
+        {(viewMode === 'list' || viewMode === 'published_toast') && (
           <TouchableOpacity
-            style={styles.bellBtn}
-            onPress={() => router.push('/recycler/notifications' as any)}
+            onPress={() => setViewMode('new_listing')}
+            style={styles.addHeaderLink}
           >
-            <Bell size={20} color="#1F2937" />
+            <Text style={styles.addHeaderLinkText}>+ Add</Text>
           </TouchableOpacity>
-        </View>
+        )}
       </View>
 
       {/* Demo Switcher Pills */}

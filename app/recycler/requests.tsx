@@ -21,7 +21,7 @@ import {
   ChevronRight,
   Info,
 } from 'lucide-react-native';
-import TopGreenWave from '../../components/common/TopGreenWave';
+import { AppHeader } from '../../components/common/AppHeader';
 import RecyclerBottomNavBar from '../../components/common/RecyclerBottomNavBar';
 
 type RequestTab = 'new' | 'active' | 'done';
@@ -34,17 +34,20 @@ export default function RecyclerRequestsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <TopGreenWave />
+      <AppHeader
+        showBack={true}
+        rightAction="bell"
+        onPressBell={() => router.push('/recycler/notifications' as any)}
+      />
 
-      {/* Header */}
+      {/* Page Title Row below green wave */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Requests</Text>
         <TouchableOpacity
-          style={styles.bellBtn}
-          onPress={() => router.push('/recycler/notifications' as any)}
+          onPress={() => router.push('/recycler/messages' as any)}
+          style={{ paddingVertical: 4, paddingHorizontal: 8 }}
         >
-          <Bell size={20} color="#1F2937" />
-          <View style={styles.bellDot} />
+          <Text style={{ fontSize: 13, fontWeight: '700', color: '#2E7D32' }}>Messages →</Text>
         </TouchableOpacity>
       </View>
 

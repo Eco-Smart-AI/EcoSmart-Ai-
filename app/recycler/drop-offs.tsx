@@ -13,7 +13,7 @@ import {
   Clock,
   Info,
 } from 'lucide-react-native';
-import TopGreenWave from '../../components/common/TopGreenWave';
+import { AppHeader } from '../../components/common/AppHeader';
 import RecyclerBottomNavBar from '../../components/common/RecyclerBottomNavBar';
 
 export default function RecyclerDropOffsScreen() {
@@ -21,15 +21,19 @@ export default function RecyclerDropOffsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <TopGreenWave />
+      <AppHeader
+        showBack={true}
+        rightAction="bell"
+        onPressBell={() => router.push('/recycler/notifications' as any)}
+      />
 
-      {/* Header */}
+      {/* Sub-Header below green wave */}
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => router.push('/recycler/requests' as any)}
           style={styles.backBtn}
         >
-          <ArrowLeft size={22} color="#1F2937" />
+          <ArrowLeft size={20} color="#1F2937" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Drop-offs today</Text>
       </View>

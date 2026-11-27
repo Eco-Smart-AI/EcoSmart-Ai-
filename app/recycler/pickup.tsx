@@ -30,7 +30,7 @@ import {
   ChevronRight,
   Info,
 } from 'lucide-react-native';
-import TopGreenWave from '../../components/common/TopGreenWave';
+import { AppHeader } from '../../components/common/AppHeader';
 import RecyclerBottomNavBar from '../../components/common/RecyclerBottomNavBar';
 
 type PickupStage =
@@ -80,16 +80,20 @@ export default function RecyclerPickupScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <TopGreenWave />
+      <AppHeader
+        showBack={true}
+        rightAction="bell"
+        onPressBell={() => router.push('/recycler/notifications' as any)}
+      />
 
-      {/* Header */}
+      {/* Sub-Header below green wave */}
       <View style={styles.header}>
         <TouchableOpacity
-          onPress={() => router.push('/recycler/home' as any)}
+          onPress={() => router.push('/recycler/requests' as any)}
           style={styles.headerBackBtn}
           activeOpacity={0.7}
         >
-          <ArrowLeft size={22} color="#1F2937" />
+          <ArrowLeft size={20} color="#1F2937" />
         </TouchableOpacity>
         <View style={styles.headerTitleWrap}>
           <Text style={styles.headerTitle}>
@@ -99,17 +103,10 @@ export default function RecyclerPickupScreen() {
               ? 'Pickup complete'
               : 'Pickup · Musa A.'}
           </Text>
-          <Text style={styles.headerSub}>
-            {stage === 'new_request' ? '5 min ago' : 'REQ-001'}
-          </Text>
         </View>
-        <TouchableOpacity
-          style={styles.bellBtn}
-          onPress={() => router.push('/recycler/notifications' as any)}
-        >
-          <Bell size={20} color="#1F2937" />
-          <View style={styles.bellDot} />
-        </TouchableOpacity>
+        <Text style={styles.headerSub}>
+          {stage === 'new_request' ? '5 min ago' : 'REQ-001'}
+        </Text>
       </View>
 
       {/* Demo Stage Switcher Pill Bar */}

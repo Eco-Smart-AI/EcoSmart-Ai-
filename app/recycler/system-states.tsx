@@ -15,7 +15,7 @@ import {
   AlertCircle,
   MapPin,
 } from 'lucide-react-native';
-import TopGreenWave from '../../components/common/TopGreenWave';
+import { AppHeader } from '../../components/common/AppHeader';
 import RecyclerBottomNavBar from '../../components/common/RecyclerBottomNavBar';
 
 type SystemStateMode = 'empty' | 'loading' | 'offline' | 'error';
@@ -33,17 +33,15 @@ export default function RecyclerSystemStatesScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <TopGreenWave />
+      <AppHeader
+        showBack={true}
+        rightAction="bell"
+        onPressBell={() => router.push('/recycler/notifications' as any)}
+      />
 
-      {/* Header */}
+      {/* Sub-Header below green wave */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Requests</Text>
-        <TouchableOpacity
-          style={styles.bellBtn}
-          onPress={() => router.push('/recycler/notifications' as any)}
-        >
-          <Bell size={20} color="#1F2937" />
-        </TouchableOpacity>
       </View>
 
       {/* Demo Switcher Pills */}

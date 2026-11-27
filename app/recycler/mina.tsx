@@ -23,7 +23,7 @@ import {
   Check,
   Clock,
 } from 'lucide-react-native';
-import TopGreenWave from '../../components/common/TopGreenWave';
+import { AppHeader } from '../../components/common/AppHeader';
 import RecyclerBottomNavBar from '../../components/common/RecyclerBottomNavBar';
 
 type MinaFrame =
@@ -63,26 +63,23 @@ export default function RecyclerMinaScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <TopGreenWave />
+      <AppHeader
+        showBack={true}
+        rightAction="bell"
+        onPressBell={() => router.push('/recycler/notifications' as any)}
+      />
 
-      {/* Header */}
+      {/* Sub-Header below green wave */}
       <View style={styles.header}>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <TouchableOpacity
             onPress={() => router.push('/recycler/home' as any)}
             style={styles.backBtn}
           >
-            <ArrowLeft size={22} color="#1F2937" />
+            <ArrowLeft size={20} color="#1F2937" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Ask Mina</Text>
         </View>
-
-        <TouchableOpacity
-          style={styles.bellBtn}
-          onPress={() => router.push('/recycler/notifications' as any)}
-        >
-          <Bell size={20} color="#1F2937" />
-        </TouchableOpacity>
       </View>
 
       {/* Demo Switcher Pills */}

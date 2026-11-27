@@ -122,7 +122,13 @@ export default function RecyclerSetupScreen() {
         step === 'live' && { backgroundColor: '#E6F4D7' },
       ]}
     >
-      {step !== 'live' && <AppHeader showBack={false} rightAction="bell" />}
+      {step !== 'live' && (
+        <AppHeader
+          showBack={true}
+          rightAction="bell"
+          onPressBell={() => router.push('/recycler/notifications' as any)}
+        />
+      )}
 
       {/* Demo Switcher (Screens · 03 · Business profile setup.png) */}
       <View style={styles.demoBar}>
