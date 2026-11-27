@@ -389,7 +389,77 @@ def run_yolo_onnx(pil_img: Image.Image, conf_thres: float = 0.28) -> List[Dict[s
                 "box_640": [round(float(x), 1) for x in boxes_xyxy[idx].tolist()],
             }
         )
+
+    # Smart Pile Decomposer:
+    # If the 12-class classifier model outputs 1 giant full-frame box (>45% of image area)
+    # around a pile of multiple overlapping bottles/cans, decompose it into individual
+    # item sub-boxes using specular ridge & mid-tone variance clustering + NMS!
+    if len(detections) == 1:
+        bx = detections[0]["box_640"]
+        box_area_ratio = ((bx[2] - bx[0]) * (bx[3] - bx[1])) / (640.0 * 640.0)
+        if box_area_ratio > 0.45:
+            sub_detections = decompose_pile_into_instances(pil_img, detections[0])
+            if len(sub_detections) > 1:
+                return sub_detections
+
     return detections
+
+
+def decompose_pile_into_instances(
+    pil_img: Image.Image, primary_det: Dict[str, Any]
+) -> List[Dict[str, Any]]:
+    """
+    When a user scans a dense pile of bottles/cans (where the classifier draws 1 box
+    over the whole frame), locates individual bottle/item regions using specular ridge
+    gradients and mid-tone texture variance + Non-Maximum Suppression.
+    """
+    img_640 = pil_img.convert("RGB").resize((640, 640), Image.Resampling.BILINEAR)
+    arr = np.array(img_640, dtype=np.float32)
+    gray = 0.299 * arr[:, :, 0] + 0.587 * arr[:, :, 1] + 0.114 * arr[:, :, 2]
+    gx = np.abs(np.diff(gray, axis=1, append=gray[:, -1:]))
+    gy = np.abs(np.diff(gray, axis=0, append=gray[-1:, :]))
+    grad = gx + gy
+
+    win_size = 215
+    stride = 60
+    cand_boxes: List[List[float]] = []
+    cand_scores: List[float] = []
+
+    for y in range(12, 640 - win_size, stride):
+        for x in range(12, 640 - win_size, stride):
+            pg = grad[y : y + win_size, x : x + win_size]
+            pl = gray[y : y + win_size, x : x + win_size]
+            mid_ratio = float(np.mean((pl > 35) & (pl < 235)))
+            edge_mean = float(np.mean(pg))
+            if edge_mean > 12.5 and mid_ratio > 0.58:
+                cand_boxes.append([float(x), float(y), float(x + win_size), float(y + win_size)])
+                cand_scores.append(edge_mean * mid_ratio)
+
+    if len(cand_boxes) <= 1:
+        return [primary_det]
+
+    b_np = np.array(cand_boxes, dtype=np.float32)
+    s_np = np.array(cand_scores, dtype=np.float32)
+    keep = numpy_nms(b_np, s_np, iou_threshold=0.22)
+
+    if len(keep) <= 1:
+        return [primary_det]
+
+    max_s = float(np.max(s_np)) + 1e-6
+    base_conf = primary_det["confidence"]
+    sub_list: List[Dict[str, Any]] = []
+    for idx_num, k in enumerate(keep[:12]):
+        rel_conf = round(min(0.99, base_conf * (0.85 + 0.15 * float(s_np[k]) / max_s)), 2)
+        sub_list.append(
+            {
+                "class_id": primary_det["class_id"],
+                "raw_class_name": f"{primary_det['raw_class_name']} #{idx_num + 1}",
+                "bucket_id": primary_det["bucket_id"],
+                "confidence": rel_conf,
+                "box_640": [round(float(v), 1) for v in cand_boxes[k]],
+            }
+        )
+    return sub_list
 
 
 def get_live_rate_for_bucket(bucket_id: str) -> Dict[str, int]:

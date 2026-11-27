@@ -138,7 +138,13 @@
         <!-- 3 Big Metric Tiles -->
         <div class="grid grid-cols-3 gap-3">
           <div class="bg-slate-50 border border-slate-200 rounded-xl p-3">
-            <div class="text-[11px] text-slate-500">Counted Items</div>
+            <div class="flex items-center justify-between">
+              <div class="text-[11px] text-slate-500">Counted Items</div>
+              <div class="flex gap-1">
+                <button onclick="adjustLiveCount(-1)" class="w-5 h-5 rounded bg-white border border-slate-300 text-xs font-extrabold hover:bg-slate-100">−</button>
+                <button onclick="adjustLiveCount(1)" class="w-5 h-5 rounded bg-white border border-slate-300 text-xs font-extrabold hover:bg-slate-100">+</button>
+              </div>
+            </div>
             <div id="countVal" class="text-xl font-extrabold text-slate-900 mt-0.5">2 bottles</div>
             <div id="unitGrams" class="text-[11px] text-slate-400">~20g each</div>
           </div>
@@ -385,6 +391,13 @@
       if (data.success) {
         updateValuationUI(data.valuation, [], data.inference_time_ms);
       }
+    }
+
+    function adjustLiveCount(delta) {
+      const b = document.getElementById('bucketSelect').value || 'pet';
+      const cur = parseInt(document.getElementById('countInput').value || '1', 10);
+      const nextCount = Math.max(1, cur + delta);
+      simulateScan(b, nextCount);
     }
 
     // 6. Active learning: Fill & Save Custom Nigerian Name
