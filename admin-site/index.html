@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EcoSmart AI — Admin · Abuja Pilot</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; background-color: #F8FAFC; color: #0F172A; margin: 0; }
+    .eco-green-bg { background-color: #2E7D32; }
+    .eco-green-bg:hover { background-color: #246327; }
+    .eco-pill-active { background-color: #E6F4D7; color: #166534; font-weight: 700; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState } = React;
+
+    function App() {
+      const [section, setSection] = useState('overview');
+      const [modal, setModal] = useState(null); // 'send_back' | 'adjust_600' | 'suspend_halima'
+      const [email, setEmail] = useState('ifeoma@ecosmart.ng');
+      const [password, setPassword] = useState('••••••••••••');
+      const [faceOk, setFaceOk] = useState(true);
+      const [licenceOk, setLicenceOk] = useState(false);
+      const [disputeOpt, setDisputeOpt] = useState('adjust');
+      const [newRateText, setNewRateText] = useState('₦100/kg → ₦600 to household');
+      const [disputeReason, setDisputeReason] = useState('Part of the cardboard was wet...');
+      const [minRate, setMinRate] = useState('80');
+      const [maxRate, setMaxRate] = useState('150');
+      const [rateReason, setRateReason] = useState("Recyclers' average went up to ₦118");
+      const [contentLang, setContentLang] = useState('EN');
+      const [tip1, setTip1] = useState('Empty, rinse and dry');
+      const [tip2, setTip2] = useState('Flatten to save space');
+      const [tip3, setTip3] = useState('Keep caps separate');
+      const [suspendReason, setSuspendReason] = useState('Asked a recycler to pay outside the app');
+      const [supportReply, setSupportReply] = useState('');
+      const [chatMsgs, setChatMsgs] = useState([
+        { id: 1, from: 'user', text: "Hello, I cashed out ₦1,000 to OPay yesterday but it hasn't come.", time: '10:41' },
+        { id: 2, from: 'admin', text: "Hi Musa, I'm checking now. Can you confirm the last 4 digits of your OPay account?", time: '10:42 · Ifeoma' },
+        { id: 3, from: 'user', text: 'It ends 4421.', time: '10:43' },
+      ]);
+
+      const switcherItems = [
+        { id: 'sign_in', label: '00.1 Sign In' },
+        { id: 'two_factor', label: '00.2 2FA Code' },
+        { id: 'overview', label: '01.1 Overview' },
+        { id: 'verifications', label: '01.2 Verifications' },
+        { id: 'disputes', label: '01.3 Disputes' },
+        { id: 'approvals', label: '01.4 Approvals' },
+        { id: 'payments', label: '01.5 Payments' },
+        { id: 'pickup_detail', label: '02.1 Pickup REQ-001' },
+        { id: 'failed_payout', label: '02.2 Failed Payout' },
+        { id: 'support', label: '02.3 Support' },
+        { id: 'users', label: '03.1 Users' },
+        { id: 'market_rates', label: '03.2 Market Rates' },
+        { id: 'reports', label: '03.3 Reports' },
+        { id: 'content', label: '03.4 Content' },
+        { id: 'audit_log', label: '03.5 Audit Log' },
+      ];
+
+      const sidebarNav = [
+        { id: 'overview', label: 'Overview', icon: '🏠' },
+        { id: 'verifications', label: 'Verifications', icon: '✓', badge: 12 },
+        { id: 'disputes', label: 'Disputes', icon: '⚖️', badge: 3 },
+        { id: 'approvals', label: 'Approvals', icon: '🛡️', badge: 2 },
+        { id: 'payments', label: 'Payments', icon: '💳' },
+        { id: 'support', label: 'Support', icon: '💬', badge: 4 },
+        { id: 'users', label: 'Users', icon: '👥' },
+        { id: 'market_rates', label: 'Market rates', icon: '🏷️' },
+        { id: 'reports', label: 'Reports', icon: '🚩', badge: 2 },
+        { id: 'content', label: 'Content', icon: '📄' },
+        { id: 'audit_log', label: 'Audit log', icon: '🕒' },
+      ];
+
+      const activeSidebar = (section === 'pickup_detail' || section === 'failed_payout') ? 'payments' : section;
+
+      const sendChat = () => {
+        if (!supportReply.trim()) return;
+        setChatMsgs([...chatMsgs, { id: Date.now(), from: 'admin', text: supportReply, time: 'Just now · Ifeoma' }]);
+        setSupportReply('');
+      };
+
+      return (
+        <div className="min-h-screen flex flex-col bg-slate-50">
+          {/* Top Demo Switcher Bar for All 18 Frames */}
+          <div className="bg-slate-900 text-white px-4 py-2 flex items-center gap-2 overflow-x-auto text-xs border-b border-slate-800">
+            <span className="font-bold text-emerald-400 shrink-0 mr-1">Admin Screens (Copy 9):</span>
+            {switcherItems.map((it) => (
+              <button
+                key={it.id}
+                onClick={() => { setModal(null); setSection(it.id); }}
+                className={`px-2.5 py-1 rounded-full shrink-0 transition ${
+                  section === it.id && !modal ? 'bg-emerald-700 text-white font-bold' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                }`}
+              >
+                {it.label}
+              </button>
+            ))}
+            <button
+              onClick={() => { setSection('verifications'); setModal('send_back'); }}
+              className={`px-2.5 py-1 rounded-full shrink-0 ${modal === 'send_back' ? 'bg-amber-600 font-bold' : 'bg-slate-800 text-amber-300'}`}
+            >
+              04.1 Pop-up: Send Back
+            </button>
+            <button
+              onClick={() => { setSection('disputes'); setModal('adjust_600'); }}
+              className={`px-2.5 py-1 rounded-full shrink-0 ${modal === 'adjust_600' ? 'bg-amber-600 font-bold' : 'bg-slate-800 text-amber-300'}`}
+            >
+              04.2 Pop-up: Adjust ₦600
+            </button>
+            <button
+              onClick={() => { setSection('users'); setModal('suspend_halima'); }}
+              className={`px-2.5 py-1 rounded-full shrink-0 ${modal === 'suspend_halima' ? 'bg-amber-600 font-bold' : 'bg-slate-800 text-amber-300'}`}
+            >
+              04.3 Pop-up: Suspend
+            </button>
+          </div>
+
+          {/* SCREEN 00: SIGN IN & 2FA */}
+          {(section === 'sign_in' || section === 'two_factor') ? (
+            <div className="flex-1 flex flex-col items-center justify-center p-6">
+              <h1 className="text-xl font-extrabold text-emerald-800">EcoSmart AI</h1>
+              <p className="text-xs text-slate-500 mt-0.5 mb-5">Admin · Abuja pilot</p>
+
+              {section === 'sign_in' ? (
+                <div className="bg-white border border-slate-200 rounded-2xl p-6 w-full max-w-sm shadow-sm">
+                  <h2 className="text-lg font-bold text-slate-900 mb-4">Sign in</h2>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Work email</label>
+                  <input
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm mb-3"
+                  />
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Password</label>
+                  <input
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm mb-4"
+                  />
+                  <button
+                    onClick={() => setSection('two_factor')}
+                    className="w-full eco-green-bg text-white font-bold text-sm py-2.5 rounded-lg"
+                  >
+                    Sign in
+                  </button>
+                  <p className="text-xs text-slate-500 text-center mt-3">
+                    Forgot password? Ask the admin lead to reset it.
+                  </p>
+                </div>
+              ) : (
+                <div className="bg-white border border-slate-200 rounded-2xl p-6 w-full max-w-sm shadow-sm">
+                  <h2 className="text-lg font-bold text-slate-900 mb-1">Enter your 6-digit code</h2>
+                  <p className="text-xs text-slate-500 mb-4">
+                    Open your authenticator app and type the code for EcoSmart Admin.
+                  </p>
+                  <div className="grid grid-cols-6 gap-2 mb-4">
+                    {['4', '8', '2', '0', '3', ''].map((d, i) => (
+                      <div
+                        key={i}
+                        className={`h-11 rounded-lg border flex items-center justify-center font-extrabold text-base ${
+                          i === 5 ? 'border-2 border-emerald-700' : 'border-slate-300'
+                        }`}
+                      >
+                        {d}
+                      </div>
+                    ))}
+                  </div>
+                  <button
+                    onClick={() => setSection('overview')}
+                    className="w-full eco-green-bg text-white font-bold text-sm py-2.5 rounded-lg"
+                  >
+                    Verify and continue
+                  </button>
+                  <button
+                    onClick={() => setSection('overview')}
+                    className="w-full text-emerald-800 font-bold text-xs mt-3 text-center"
+                  >
+                    Use a backup code instead
+                  </button>
+                </div>
+              )}
+
+              <p className="text-xs text-slate-400 mt-4">
+                🔒 For EcoSmart staff only. Every sign-in is recorded.
+              </p>
+            </div>
+          ) : (
+            /* MAIN DESKTOP ADMIN SHELL */
+            <div className="flex-1 flex">
+              {/* Persistent Left Sidebar */}
+              <aside className="w-56 bg-white border-r border-slate-200 p-3 flex flex-col justify-between shrink-0">
+                <div>
+                  <div className="px-2.5 py-2 mb-3">
+                    <div className="text-base font-extrabold text-emerald-800">EcoSmart AI</div>
+                    <div className="text-xs text-slate-500">Admin · Abuja pilot</div>
+                  </div>
+                  <nav className="space-y-1">
+                    {sidebarNav.map((item) => {
+                      const active = activeSidebar === item.id;
+                      return (
+                        <button
+                          key={item.id}
+                          onClick={() => setSection(item.id)}
+                          className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs transition ${
+                            active ? 'eco-pill-active' : 'text-slate-700 font-medium hover:bg-slate-100'
+                          }`}
+                        >
+                          <span className="flex items-center gap-2.5">
+                            <span>{item.icon}</span>
+                            <span>{item.label}</span>
+                          </span>
+                          {item.badge && (
+                            <span
+                              className={`px-1.5 py-0.5 rounded-full text-[10px] font-extrabold ${
+                                active ? 'bg-emerald-700 text-white' : 'bg-amber-100 text-amber-800'
+                              }`}
+                            >
+                              {item.badge}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </nav>
+                </div>
+                <button
+                  onClick={() => setSection('sign_in')}
+                  className="text-left px-3 py-2 text-xs text-slate-500 hover:text-slate-800 border-t border-slate-100"
+                >
+                  Ifeoma A. · Sign out
+                </button>
+              </aside>
+
+              {/* Main Workspace Content */}
+              <main className="flex-1 p-6 overflow-y-auto">
+                {/* 01.1 OVERVIEW */}
+                {section === 'overview' && (
+                  <div className="space-y-5 max-w-6xl">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h1 className="text-xl font-extrabold text-slate-900">Good morning, Ifeoma</h1>
+                        <p className="text-xs text-slate-500">Thursday 12 Nov · Abuja pilot</p>
+                      </div>
+                      <input
+                        placeholder="🔍 Search name, phone or REQ-..."
+                        className="bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs w-64"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-4 gap-4">
+                      <div onClick={() => setSection('verifications')} className="bg-white border border-slate-200 rounded-xl p-4 cursor-pointer hover:border-emerald-600">
+                        <div className="text-xs text-slate-500">Waiting for verification</div>
+                        <div className="text-2xl font-extrabold my-1">12</div>
+                        <div className="text-xs text-slate-400">Oldest waiting 19 h</div>
+                      </div>
+                      <div onClick={() => setSection('disputes')} className="bg-white border border-slate-200 rounded-xl p-4 cursor-pointer hover:border-emerald-600">
+                        <div className="text-xs text-slate-500">Open disputes</div>
+                        <div className="text-2xl font-extrabold my-1">3</div>
+                        <div className="text-xs text-slate-400">₦1,734 frozen</div>
+                      </div>
+                      <div onClick={() => setSection('payments')} className="bg-white border border-slate-200 rounded-xl p-4 cursor-pointer hover:border-emerald-600">
+                        <div className="text-xs text-slate-500">Held in escrow</div>
+                        <div className="text-2xl font-extrabold my-1">₦184,500</div>
+                        <div className="text-xs text-slate-400">48 active pickups</div>
+                      </div>
+                      <div onClick={() => setSection('failed_payout')} className="bg-white border border-slate-200 rounded-xl p-4 cursor-pointer hover:border-emerald-600">
+                        <div className="text-xs text-slate-500">Failed payouts</div>
+                        <div className="text-2xl font-extrabold my-1">1</div>
+                        <div className="text-xs text-red-600 font-semibold">Needs a retry</div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-5">
+                      <div className="col-span-2 bg-white border border-slate-200 rounded-xl p-5">
+                        <div className="flex justify-between items-center mb-3">
+                          <h2 className="font-bold text-sm">Needs your attention</h2>
+                          <span className="text-xs text-slate-400">5 items</span>
+                        </div>
+                        <table className="w-full text-xs">
+                          <thead>
+                            <tr className="text-left text-slate-400 border-b border-slate-200">
+                              <th className="pb-2">Item</th>
+                              <th className="pb-2">Who</th>
+                              <th className="pb-2">Waiting</th>
+                              <th className="pb-2">Status</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            <tr onClick={() => setSection('approvals')} className="cursor-pointer hover:bg-slate-50">
+                              <td className="py-3 font-bold">Second approval · REQ-0588 · ₦62,000</td>
+                              <td>Asked by Tunde</td>
+                              <td>2 h</td>
+                              <td><span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-bold">🕒 Needs you</span></td>
+                            </tr>
+                            <tr onClick={() => setSection('verifications')} className="cursor-pointer hover:bg-slate-50">
+                              <td className="py-3 font-bold">Licence check</td>
+                              <td>Musa Waste</td>
+                              <td>19 h</td>
+                              <td><span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-bold">🕒 To review</span></td>
+                            </tr>
+                            <tr onClick={() => setSection('disputes')} className="cursor-pointer hover:bg-slate-50">
+                              <td className="py-3 font-bold">Dispute · REQ-0412</td>
+                              <td>Halima B. / Bwari Renew</td>
+                              <td>3 h</td>
+                              <td><span className="px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-bold">❗ Frozen</span></td>
+                            </tr>
+                            <tr onClick={() => setSection('failed_payout')} className="cursor-pointer hover:bg-slate-50">
+                              <td className="py-3 font-bold">Payout failed</td>
+                              <td>Bwari Renew · PAY-0871</td>
+                              <td>1 h</td>
+                              <td><span className="px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-bold">❗ Retry</span></td>
+                            </tr>
+                            <tr onClick={() => setSection('pickup_detail')} className="cursor-pointer hover:bg-slate-50">
+                              <td className="py-3 font-bold">Code not entered</td>
+                              <td>REQ-0398</td>
+                              <td>2 h</td>
+                              <td><span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-bold">🕒 Waiting</span></td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+
+                      <div className="bg-white border border-slate-200 rounded-xl p-5">
+                        <h2 className="font-bold text-sm mb-3">Today</h2>
+                        <div className="space-y-3 text-xs divide-y divide-slate-100">
+                          <div className="flex justify-between pt-2"><span>Pickups completed</span><span className="font-bold">38</span></div>
+                          <div className="flex justify-between pt-2"><span>Paid to households</span><span className="font-bold text-emerald-700">₦41,820</span></div>
+                          <div className="flex justify-between pt-2"><span>Returned to recyclers</span><span className="font-bold">₦6,140</span></div>
+                          <div className="flex justify-between pt-2"><span>New recyclers approved</span><span className="font-bold">4</span></div>
+                          <div className="flex justify-between pt-2"><span>No-shows</span><span className="font-bold">2</span></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* 01.2 VERIFICATIONS */}
+                {section === 'verifications' && (
+                  <div className="space-y-4 max-w-6xl">
+                    <div>
+                      <h1 className="text-xl font-extrabold">Verifications</h1>
+                      <p className="text-xs text-slate-500">12 waiting · oldest 19 h · aim to review within 24 h</p>
+                    </div>
+                    <div className="grid grid-cols-3 gap-5">
+                      <div className="bg-white border border-slate-200 rounded-xl p-3 space-y-2">
+                        <div className="flex gap-1.5 text-xs mb-2">
+                          <span className="px-2.5 py-1 rounded eco-pill-active">All 12</span>
+                          <span className="px-2.5 py-1 rounded bg-slate-100 text-slate-600">Business 3</span>
+                          <span className="px-2.5 py-1 rounded bg-slate-100 text-slate-600">Collector 9</span>
+                        </div>
+                        {[
+                          { name: 'Musa Waste Collection', role: 'Collector', w: '19 h', sel: true },
+                          { name: 'Bwari Renew Ltd', role: 'Business', w: '11 h', sel: false },
+                          { name: 'Aisha M.', role: 'Collector', w: '6 h', sel: false },
+                          { name: 'Dutse Recyclers', role: 'Business', w: '2 h', sel: false },
+                        ].map((q, i) => (
+                          <div key={i} className={`p-2.5 rounded-lg flex justify-between items-center text-xs ${q.sel ? 'bg-emerald-50 border-l-4 border-emerald-700' : ''}`}>
+                            <div><div className="font-bold">{q.name}</div><div className="text-slate-500">{q.role}</div></div>
+                            <span className={q.sel ? 'text-amber-700 font-bold' : 'text-slate-400'}>{q.w}</span>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="col-span-2 bg-white border border-slate-200 rounded-xl p-5 space-y-4">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h2 className="text-base font-extrabold">Musa Waste Collection</h2>
+                            <p className="text-xs text-slate-500">Collector · Kubwa · signed up with agent Tunde · waiting 19 h</p>
+                          </div>
+                          <span className="px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-bold">🕒 In review</span>
+                        </div>
+
+                        <div className="border border-slate-200 rounded-xl p-3.5 text-xs space-y-1.5">
+                          <div className="flex justify-between items-center mb-1">
+                            <span className="font-bold">Automatic checks</span>
+                            <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold">✓ 3 of 3 passed</span>
+                          </div>
+                          <div><span className="text-emerald-700 font-bold">✓</span> NIN 1234 567 8901 found · MUSA ABDULLAHI</div>
+                          <div><span className="text-emerald-700 font-bold">✓</span> Payout account name matches NIN</div>
+                          <div><span className="text-emerald-700 font-bold">✓</span> Phone number verified by SMS</div>
+                        </div>
+
+                        <div className="border border-slate-200 rounded-xl p-3.5 text-xs space-y-3">
+                          <div className="font-bold">Is this the same person?</div>
+                          <div className="flex gap-3">
+                            <div className="w-40 h-24 bg-slate-100 rounded-lg flex flex-col items-center justify-center text-slate-500">👤<span>NIN photo · from NIMC</span></div>
+                            <div className="w-40 h-24 bg-slate-100 rounded-lg flex flex-col items-center justify-center text-slate-500">🤳<span>Selfie · taken in app</span></div>
+                          </div>
+                          <div className="flex justify-between items-center pt-2 border-t border-slate-100">
+                            <div><div className="font-bold">Face match</div><div className="text-slate-500">Compare face shape, eyes and nose</div></div>
+                            <div className="flex gap-1.5">
+                              <button onClick={() => setFaceOk(true)} className={`px-2.5 py-1 rounded border font-bold ${faceOk ? 'bg-emerald-100 border-emerald-700 text-emerald-800' : 'border-slate-300'}`}>✓ OK</button>
+                              <button onClick={() => setFaceOk(false)} className={`px-2.5 py-1 rounded border font-bold ${!faceOk ? 'bg-red-100 border-red-600 text-red-700' : 'border-slate-300'}`}>✕ Fix</button>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="border border-slate-200 rounded-xl p-3.5 text-xs space-y-3">
+                          <div className="font-bold">Work licence</div>
+                          <div className="flex gap-4 items-center">
+                            <div className="w-40 h-24 bg-slate-100 rounded-lg flex flex-col items-center justify-center text-slate-500">📄<span>Licence photo</span></div>
+                            <div className="flex-1 space-y-1.5">
+                              <div className="flex justify-between"><span className="text-slate-500">Issuer</span><span className="font-bold">AEPB</span></div>
+                              <div className="flex justify-between"><span className="text-slate-500">Number</span><span className="font-bold">AEPB/RC/2025/0412</span></div>
+                              <div className="flex justify-between"><span className="text-slate-500">Expires</span><span className="font-bold">31 Dec 2026</span></div>
+                            </div>
+                          </div>
+                          <div className="flex justify-between items-center pt-2 border-t border-slate-100">
+                            <div><div className="font-bold">Licence check</div><div className="text-slate-500">Readable, matches the name, not expired</div></div>
+                            <div className="flex gap-1.5">
+                              <button onClick={() => setLicenceOk(true)} className={`px-2.5 py-1 rounded border font-bold ${licenceOk ? 'bg-emerald-100 border-emerald-700 text-emerald-800' : 'border-slate-300'}`}>✓ OK</button>
+                              <button onClick={() => setLicenceOk(false)} className={`px-2.5 py-1 rounded border font-bold ${!licenceOk ? 'bg-red-100 border-red-600 text-red-700' : 'border-slate-300'}`}>✕ Fix</button>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex justify-between items-center pt-2 border-t border-slate-200 text-xs">
+                          <span className="text-red-600 font-semibold">❗ 1 item marked Fix — only the licence photo is sent back.</span>
+                          <div className="flex gap-2">
+                            <button className="px-3.5 py-2 rounded-lg border border-slate-300 font-bold">Approve</button>
+                            <button onClick={() => setModal('send_back')} className="px-3.5 py-2 rounded-lg eco-green-bg text-white font-bold">Send back to fix</button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* 01.3 DISPUTES */}
+                {section === 'disputes' && (
+                  <div className="space-y-4 max-w-6xl">
+                    <div>
+                      <div className="flex items-center gap-2.5">
+                        <h1 className="text-xl font-extrabold">Dispute · REQ-0412</h1>
+                        <span className="px-2.5 py-0.5 rounded-full bg-red-100 text-red-700 text-xs font-bold">❗ Money frozen</span>
+                      </div>
+                      <p className="text-xs text-slate-500">Halima B. (household) and Bwari Renew (recycler) · opened 3 h ago by the recycler</p>
+                    </div>
+                    <div className="grid grid-cols-3 gap-5 text-xs">
+                      <div className="col-span-2 space-y-4">
+                        <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-2">
+                          <div className="font-bold text-sm">Money</div>
+                          <div className="flex justify-between"><span className="text-slate-500">Set aside by recycler</span><span className="font-bold">₦600</span></div>
+                          <div className="flex justify-between"><span className="text-slate-500">Final amount sent to household</span><span className="font-bold">₦540 · 6 kg × ₦90</span></div>
+                          <div className="flex justify-between"><span className="text-slate-500">Household accepted</span><span className="font-bold text-red-600">No</span></div>
+                        </div>
+                        <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-3">
+                          <div className="font-bold text-sm">Evidence</div>
+                          <div className="flex gap-3">
+                            <div className="w-40 h-24 bg-slate-100 rounded-lg flex flex-col items-center justify-center text-slate-500">📄<span>Request photo</span></div>
+                            <div className="w-40 h-24 bg-slate-100 rounded-lg flex flex-col items-center justify-center text-slate-500">⚖️<span>Scale photo · 6.0 kg</span></div>
+                          </div>
+                          <div className="bg-slate-50 p-3 rounded-lg">
+                            <div className="text-slate-400">Recycler's reason</div>
+                            <div className="font-medium mt-0.5">"Some cardboard was wet. I offered ₦90/kg instead of ₦110/kg."</div>
+                          </div>
+                        </div>
+                        <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-2">
+                          <div className="font-bold text-sm">Timeline</div>
+                          <div><span className="text-slate-400 mr-3">12:05</span>✓ Accepted · ₦600 set aside</div>
+                          <div><span className="text-slate-400 mr-3">12:31</span>✓ Arrived · GPS inside pickup area</div>
+                          <div><span className="text-slate-400 mr-3">12:40</span>✓ Weighed 6.0 kg · scale photo</div>
+                          <div><span className="text-slate-400 mr-3">12:42</span>✓ New rate proposed · ₦90/kg</div>
+                          <div className="text-red-600 font-semibold"><span className="text-slate-400 mr-3">12:44</span>❗ Household declined the new rate</div>
+                        </div>
+                      </div>
+                      <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-3 self-start">
+                        <div className="font-bold text-sm">Your decision</div>
+                        {[
+                          { id: 'pay', t: 'Pay household', s: 'At the agreed ₦110/kg → ₦660 (recycler tops up ₦60)' },
+                          { id: 'adjust', t: 'Adjust the amount', s: 'Set a fair amount for both sides' },
+                          { id: 'refund', t: 'Refund recycler', s: '₦600 back to the recycler, waste stays with the household' },
+                        ].map((o) => (
+                          <div
+                            key={o.id}
+                            onClick={() => setDisputeOpt(o.id)}
+                            className={`p-3 rounded-lg border cursor-pointer ${disputeOpt === o.id ? 'border-emerald-700 bg-emerald-50' : 'border-slate-200'}`}
+                          >
+                            <div className="font-bold">{o.t}</div>
+                            <div className="text-slate-500 mt-0.5">{o.s}</div>
+                          </div>
+                        ))}
+                        <div>
+                          <label className="font-bold block mb-1">New rate</label>
+                          <input value={newRateText} onChange={(e) => setNewRateText(e.target.value)} className="w-full border border-slate-300 rounded-lg px-2.5 py-1.5" />
+                        </div>
+                        <div>
+                          <label className="font-bold block mb-1">Reason · both sides see this</label>
+                          <input value={disputeReason} onChange={(e) => setDisputeReason(e.target.value)} className="w-full border border-slate-300 rounded-lg px-2.5 py-1.5" />
+                        </div>
+                        <button onClick={() => setModal('adjust_600')} className="w-full eco-green-bg text-white font-bold py-2.5 rounded-lg">
+                          Confirm decision
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* 01.4 APPROVALS */}
+                {section === 'approvals' && (
+                  <div className="space-y-4 max-w-6xl text-xs">
+                    <div>
+                      <h1 className="text-xl font-extrabold">Approvals</h1>
+                      <p className="text-slate-500">Big money decisions need a second admin before they happen.</p>
+                    </div>
+                    <div className="grid grid-cols-3 gap-5">
+                      <div className="col-span-2 bg-white border border-slate-200 rounded-xl p-4">
+                        <table className="w-full">
+                          <thead>
+                            <tr className="text-left text-slate-400 border-b"><th className="pb-2">Decision</th><th className="pb-2">Amount</th><th className="pb-2">Asked by</th><th className="pb-2">Waiting</th></tr>
+                          </thead>
+                          <tbody className="divide-y">
+                            <tr className="bg-emerald-50">
+                              <td className="py-3 font-bold">Dispute decision · REQ-0588<div className="font-normal text-slate-500">Pay household after wet-weight dispute</div></td>
+                              <td className="font-bold">₦62,000</td><td>Tunde</td><td>2 h</td>
+                            </tr>
+                            <tr>
+                              <td className="py-3 font-bold">Large cash out · Kubwa Green Hub<div className="font-normal text-slate-500">First cash out above ₦50,000</div></td>
+                              <td className="font-bold">₦74,300</td><td>System</td><td>40 min</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                      <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-2.5">
+                        <div className="flex justify-between items-center">
+                          <span className="font-bold text-sm">Dispute decision · REQ-0588</span>
+                          <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-bold">🕒 Needs you</span>
+                        </div>
+                        <div className="flex justify-between"><span className="text-slate-500">Household</span><span className="font-bold">Aisha M.</span></div>
+                        <div className="flex justify-between"><span className="text-slate-500">Recycler</span><span className="font-bold">Dutse Recyclers</span></div>
+                        <div className="flex justify-between"><span className="text-slate-500">Set aside</span><span className="font-bold">₦70,000</span></div>
+                        <div className="flex justify-between"><span className="text-slate-500">Tunde's decision</span><span className="font-bold text-emerald-700">Pay household ₦62,000</span></div>
+                        <div className="flex justify-between"><span className="text-slate-500">Returned to recycler</span><span className="font-bold">₦8,000</span></div>
+                        <div className="bg-slate-50 p-2.5 rounded-lg">Scale photo shows 620 kg. Recycler's claim of wet cardboard isn't supported by the photos.</div>
+                        <button onClick={() => setSection('payments')} className="w-full eco-green-bg text-white font-bold py-2 rounded-lg">Approve · pay ₦62,000</button>
+                        <button className="w-full border border-red-200 text-red-600 font-bold py-2 rounded-lg">Reject and send back</button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* 01.5 PAYMENTS, 02.1 PICKUP, 02.2 FAILED PAYOUT, 02.3 SUPPORT, 03.1-03.5 */}
+                {section !== 'overview' && section !== 'verifications' && section !== 'disputes' && section !== 'approvals' && (
+                  <div className="bg-white border border-slate-200 rounded-xl p-6 max-w-5xl text-xs space-y-3">
+                    <h1 className="text-lg font-extrabold capitalize">{section.replace('_', ' ')}</h1>
+                    <p className="text-slate-500">
+                      Full interactive view is also live at <code>/admin</code> inside your main Expo Web App! Use the top dark bar to switch between all 18 screens and confirmation modals.
+                    </p>
+                  </div>
+                )}
+              </main>
+            </div>
+          )}
+
+          {/* SCREEN 04: CONFIRMATION MODALS */}
+          {modal && (
+            <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center p-4 z-50">
+              {modal === 'send_back' && (
+                <div className="bg-white rounded-2xl p-6 max-w-sm w-full space-y-3 text-xs">
+                  <div className="w-9 h-9 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold">↺</div>
+                  <h3 className="text-base font-extrabold">Send back to Musa Waste Collection?</h3>
+                  <p className="text-slate-500">They get an SMS asking for a clearer licence photo. Their NIN, selfie and payout account stay approved.</p>
+                  <div className="flex justify-end gap-2 pt-2">
+                    <button onClick={() => setModal(null)} className="px-3.5 py-2 rounded-lg border font-bold">Cancel</button>
+                    <button onClick={() => setModal(null)} className="px-3.5 py-2 rounded-lg eco-green-bg text-white font-bold">Send back</button>
+                  </div>
+                </div>
+              )}
+              {modal === 'adjust_600' && (
+                <div className="bg-white rounded-2xl p-6 max-w-sm w-full space-y-3 text-xs">
+                  <div className="w-9 h-9 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold">⚖️</div>
+                  <h3 className="text-base font-extrabold">Adjust REQ-0412 to ₦600?</h3>
+                  <p className="text-slate-500">Both sides get an SMS with your reason. The household still gives their code to release the money.</p>
+                  <div className="bg-slate-50 p-3 rounded-lg space-y-1">
+                    <div className="flex justify-between"><span>To household</span><span className="font-bold text-emerald-700">₦600</span></div>
+                    <div className="flex justify-between"><span>Back to recycler</span><span className="font-bold">₦0</span></div>
+                    <div className="flex justify-between"><span>New rate</span><span className="font-bold">₦100/kg × 6 kg</span></div>
+                  </div>
+                  <div className="flex justify-end gap-2 pt-2">
+                    <button onClick={() => setModal(null)} className="px-3.5 py-2 rounded-lg border font-bold">Cancel</button>
+                    <button onClick={() => setModal(null)} className="px-3.5 py-2 rounded-lg eco-green-bg text-white font-bold">Confirm decision</button>
+                  </div>
+                </div>
+              )}
+              {modal === 'suspend_halima' && (
+                <div className="bg-white rounded-2xl p-6 max-w-sm w-full space-y-3 text-xs">
+                  <div className="w-9 h-9 rounded-full bg-red-100 text-red-700 flex items-center justify-center font-bold">!</div>
+                  <h3 className="text-base font-extrabold">Suspend Halima B.?</h3>
+                  <p className="text-slate-500">She can't book new pickups or cash out until you restore her account. Money already held for pickups is not affected.</p>
+                  <div>
+                    <label className="font-bold block mb-1">Reason · she'll see this</label>
+                    <input value={suspendReason} onChange={(e) => setSuspendReason(e.target.value)} className="w-full border border-slate-300 rounded-lg px-2.5 py-1.5" />
+                  </div>
+                  <div className="flex justify-end gap-2 pt-2">
+                    <button onClick={() => setModal(null)} className="px-3.5 py-2 rounded-lg border font-bold">Cancel</button>
+                    <button onClick={() => setModal(null)} className="px-3.5 py-2 rounded-lg bg-red-600 text-white font-bold">Suspend account</button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>

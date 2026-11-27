@@ -108,6 +108,25 @@ export default function SignInScreen() {
                 Recycler (Musa)
               </Text>
             </TouchableOpacity>
+            <TouchableOpacity
+              style={{
+                paddingHorizontal: 14,
+                paddingVertical: 6,
+                borderRadius: 15,
+                backgroundColor: 'transparent',
+              }}
+              onPress={() => router.push('/admin' as any)}
+            >
+              <Text
+                style={{
+                  fontSize: 12,
+                  fontWeight: '700',
+                  color: '#166534',
+                }}
+              >
+                Admin →
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
 

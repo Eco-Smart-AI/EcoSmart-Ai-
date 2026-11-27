@@ -1,16 +1,19 @@
 import React from 'react';
-import { Stack } from 'expo-router';
+import { Stack, usePathname } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { View, StyleSheet, Platform } from 'react-native';
 import '../i18n';
 
 export default function RootLayout() {
+  const pathname = usePathname();
+  const isAdminRoute = pathname?.startsWith('/admin');
+
   return (
     <SafeAreaProvider>
       <StatusBar style="dark" />
-      <View style={styles.webBackground}>
-        <View style={styles.phoneContainer}>
+      <View style={[styles.webBackground, isAdminRoute && styles.adminWebBackground]}>
+        <View style={[styles.phoneContainer, isAdminRoute && styles.adminDesktopContainer]}>
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="index" />
           </Stack>
@@ -29,6 +32,10 @@ const styles = StyleSheet.create({
     width: '100%',
     minHeight: '100%',
   },
+  adminWebBackground: {
+    backgroundColor: '#F8FAFC',
+    alignItems: 'stretch',
+  },
   phoneContainer: {
     flex: 1,
     width: '100%',
@@ -44,6 +51,17 @@ const styles = StyleSheet.create({
           borderLeftWidth: 1,
           borderRightWidth: 1,
           borderColor: '#E2E8F0',
+        }
+      : {}),
+  },
+  adminDesktopContainer: {
+    ...(Platform.OS === 'web'
+      ? {
+          maxWidth: '100%' as any,
+          borderLeftWidth: 0,
+          borderRightWidth: 0,
+          shadowOpacity: 0,
+          backgroundColor: '#F8FAFC',
         }
       : {}),
   },

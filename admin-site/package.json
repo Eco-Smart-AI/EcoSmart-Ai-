@@ -1,0 +1,9 @@
+{
+  "name": "ecosmart-admin-site",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Standalone Desktop Web App for EcoSmart AI Admin Portal (Abuja Pilot)",
+  "scripts": {
+    "build": "echo 'Static admin site ready inadmin-site/'"
+  }
+}
