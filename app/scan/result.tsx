@@ -27,6 +27,7 @@ import {
 import { AppHeader } from '../../components/common/AppHeader';
 import { BottomNavBar } from '../../components/common/BottomNavBar';
 import { CorrectionSheet, WasteCategory } from '../../components/scan/CorrectionSheet';
+import { calculateBottleToKgStats } from '../../services/wasteAiService';
 
 type ScanResultMode = 'recyclable' | 'not_sure' | 'not_recyclable' | 'not_collected_yet';
 
@@ -38,30 +39,42 @@ export default function ScanResultScreen() {
   const [sheetVisible, setSheetVisible] = useState(false);
   const [notifySubscribed, setNotifySubscribed] = useState(false);
 
-  // Dynamic scanned material details
+  // Dynamic scanned material details + YOLOv8 bottle count + Custom Nigerian Name
   const [material, setMaterial] = useState<{
     id: string;
     name: string;
     title: string;
     weight: number;
     rate: number;
+    itemCount: number;
+    customNigerianName?: string;
   }>({
     id: 'pet',
     name: 'Clear PET Plastic',
-    title: 'Hard, heavy bottle',
+    title: 'Clear PET Plastic Bottles',
     weight: 3.2,
     rate: 120,
+    itemCount: 160,
+    customNigerianName: undefined,
   });
 
-  const estimatedTotal = Math.round(material.weight * material.rate);
+  const yoloStats = calculateBottleToKgStats(material.id, material.itemCount, material.rate);
+  const estimatedTotal = Math.max(1, Math.round(material.weight * material.rate));
 
-  const handleApplyCorrection = (cat: WasteCategory, newWeight: number) => {
+  const handleApplyCorrection = (
+    cat: WasteCategory,
+    newWeight: number,
+    customNigerianName?: string,
+    newCount?: number
+  ) => {
     setMaterial({
       id: cat.id,
       name: cat.name,
-      title: cat.id === 'hdpe' ? 'Hard, heavy bottle' : cat.name,
+      title: customNigerianName || (cat.id === 'hdpe' ? 'Hard, heavy bottle' : cat.name),
       weight: newWeight,
       rate: cat.unitPrice,
+      itemCount: newCount || Math.max(1, Math.round(newWeight * cat.unitsPer1Kg)),
+      customNigerianName,
     });
     setResultMode('recyclable');
   };
@@ -163,7 +176,83 @@ export default function ScanResultScreen() {
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.materialHeadline}>{material.title}</Text>
-                <Text style={styles.materialSubtype}>{material.name}</Text>
+                <Text style={styles.materialSubtype}>
+                  {material.customNigerianName
+                    ? `Local name learned · Base: ${material.name}`
+                    : material.name}
+                </Text>
+              </View>
+            </View>
+
+            {/* YOLOv8 Nano Trash Detection: Bottle Counter & How Many Make 1 kg */}
+            <View
+              style={{
+                backgroundColor: '#F4FBF0',
+                borderRadius: 16,
+                borderWidth: 1,
+                borderColor: '#C8E6C9',
+                padding: 14,
+                marginBottom: 14,
+              }}
+            >
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Text style={{ fontSize: 12, fontWeight: '800', color: '#166534' }}>
+                  YOLOv8 Nano Unit Counter → 1 kg Calculator
+                </Text>
+                <Text style={{ fontSize: 11, fontWeight: '700', color: '#2D6A2E' }}>
+                  {yoloStats.unitsPer1Kg} {yoloStats.unitPlural} = 1 kg (₦{material.rate})
+                </Text>
+              </View>
+
+              <Text style={{ fontSize: 13, color: '#1E293B', marginTop: 6, lineHeight: 19 }}>
+                Detected <Text style={{ fontWeight: '800' }}>{yoloStats.count} {yoloStats.unitLabel}</Text>{' '}
+                (~{yoloStats.unitWeightGrams}g each = <Text style={{ fontWeight: '800' }}>{material.weight} kg</Text>).{' '}
+                {yoloStats.neededFor1Kg > 0
+                  ? `You need ${yoloStats.neededFor1Kg} more ${yoloStats.unitPlural} to make 1 kg (₦${material.rate}), or ${yoloStats.neededFor3KgPickup} more for a 3 kg home pickup.`
+                  : `That equals ${(material.weight).toFixed(1)} kg at ₦${material.rate}/kg!`}
+              </Text>
+
+              {/* Quick Demo Switcher: 2 bottles vs 1 kg (50 bottles) vs 3.2 kg (160 bottles) */}
+              <View style={{ flexDirection: 'row', gap: 6, marginTop: 10 }}>
+                {[
+                  { label: `2 ${yoloStats.unitPlural} (0.04 kg)`, count: 2, kg: 0.04 },
+                  { label: `1 kg (${yoloStats.unitsPer1Kg} ${yoloStats.unitPlural})`, count: yoloStats.unitsPer1Kg, kg: 1.0 },
+                  { label: `3.2 kg (${Math.round(yoloStats.unitsPer1Kg * 3.2)} ${yoloStats.unitPlural})`, count: Math.round(yoloStats.unitsPer1Kg * 3.2), kg: 3.2 },
+                ].map((preset) => {
+                  const active = material.itemCount === preset.count;
+                  return (
+                    <TouchableOpacity
+                      key={preset.label}
+                      onPress={() =>
+                        setMaterial((prev) => ({
+                          ...prev,
+                          itemCount: preset.count,
+                          weight: preset.kg,
+                        }))
+                      }
+                      style={{
+                        flex: 1,
+                        paddingVertical: 6,
+                        paddingHorizontal: 6,
+                        borderRadius: 8,
+                        backgroundColor: active ? '#2D6A2E' : '#FFFFFF',
+                        borderWidth: 1,
+                        borderColor: '#2D6A2E',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontSize: 10,
+                          fontWeight: '700',
+                          color: active ? '#FFFFFF' : '#2D6A2E',
+                        }}
+                      >
+                        {preset.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
             </View>
 
@@ -251,6 +340,7 @@ export default function ScanResultScreen() {
                     title: 'Clear drink bottle (PET)',
                     weight: 3.0,
                     rate: 120,
+                    itemCount: 150,
                   });
                   setResultMode('recyclable');
                 }}
@@ -272,6 +362,7 @@ export default function ScanResultScreen() {
                     title: 'Hard, heavy bottle',
                     weight: 3.0,
                     rate: 130,
+                    itemCount: 50,
                   });
                   setResultMode('recyclable');
                 }}
@@ -293,6 +384,7 @@ export default function ScanResultScreen() {
                     title: 'Aluminium cans',
                     weight: 2.5,
                     rate: 220,
+                    itemCount: 167,
                   });
                   setResultMode('recyclable');
                 }}
