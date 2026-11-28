@@ -1,14 +1,9 @@
 {
-  "0": "battery",
-  "1": "biological",
-  "2": "brown-glass",
-  "3": "cardboard",
-  "4": "clothes",
-  "5": "green-glass",
-  "6": "metal",
-  "7": "paper",
-  "8": "plastic",
-  "9": "shoes",
-  "10": "trash",
-  "11": "white-glass"
+  "0": "HDPE Plastic",
+  "1": "Multi-layer Plastic",
+  "2": "PET Bottle",
+  "3": "Single-Use-Plastic",
+  "4": "Single-layer Plastic",
+  "5": "Squeeze-Tube",
+  "6": "UHT-Box"
 }

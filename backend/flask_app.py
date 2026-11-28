@@ -136,21 +136,30 @@ NIGERIAN_MATERIAL_BUCKETS: Dict[str, Dict[str, Any]] = {
 
 def map_yolo_class_to_bucket(raw_label: str) -> str:
     """
-    Maps any class label from `arnabdhar/YOLOv8-nano-trash-detection` (TACO/TrashNet)
-    to EcoSmart AI's Nigerian material bucket.
+    Maps any class label from `muaaaa29/Plastic-Waste-Detection-YOLOv8` or TACO/TrashNet
+    to EcoSmart AI's Nigerian material bucket:
+      - 'PET Bottle' -> 'pet'
+      - 'HDPE Plastic' -> 'hdpe'
+      - 'Single-layer Plastic' / 'Multi-layer Plastic' / 'Single-Use-Plastic' / 'Squeeze-Tube' -> 'sachet'
+      - 'UHT-Box' / 'Carton' / 'Cardboard' -> 'carton'
+      - 'Can' / 'Metal' -> 'cans'
+      - 'Glass' -> 'glass'
     """
     lbl = raw_label.lower()
+    if "hdpe" in lbl or any(k in lbl for k in ["cap", "lid", "tub", "container", "gallon"]):
+        return "hdpe"
+    if "pet" in lbl or "bottle" in lbl:
+        if "glass" in lbl:
+            return "glass"
+        return "pet"
+    if any(k in lbl for k in ["uht", "box", "carton", "cardboard", "paper"]):
+        return "carton"
+    if any(k in lbl for k in ["single-layer", "multi-layer", "single-use", "bag", "wrapper", "film", "sachet", "pouch", "tube"]):
+        return "sachet"
     if any(k in lbl for k in ["can", "metal", "aluminium", "aluminum", "foil", "tin"]):
         return "cans"
-    if any(k in lbl for k in ["carton", "cardboard", "paper", "box"]):
-        return "carton"
     if "glass" in lbl:
         return "glass"
-    if any(k in lbl for k in ["bag", "wrapper", "film", "sachet", "pouch"]):
-        return "sachet"
-    if any(k in lbl for k in ["cap", "lid", "tub", "hdpe", "container"]):
-        return "hdpe"
-    # Default for bottle / plastic / clear plastic
     return "pet"
 
 
@@ -390,95 +399,7 @@ def run_yolo_onnx(pil_img: Image.Image, conf_thres: float = 0.28) -> List[Dict[s
             }
         )
 
-    # Smart Pile Decomposer:
-    # If the 12-class classifier model outputs 1 giant full-frame box (>45% of image area)
-    # around a pile of multiple overlapping bottles/cans, decompose it into individual
-    # item sub-boxes using specular ridge & mid-tone variance clustering + NMS!
-    if len(detections) == 1:
-        bx = detections[0]["box_640"]
-        box_area_ratio = ((bx[2] - bx[0]) * (bx[3] - bx[1])) / (640.0 * 640.0)
-        if box_area_ratio > 0.45:
-            sub_detections = decompose_pile_into_instances(pil_img, detections[0])
-            if len(sub_detections) > 1:
-                return sub_detections
-
     return detections
-
-
-def decompose_pile_into_instances(
-    pil_img: Image.Image, primary_det: Dict[str, Any]
-) -> List[Dict[str, Any]]:
-    """
-    When a user scans a dense pile or sack of bottles/cans (where the classifier draws 1 box
-    over the whole frame), locates individual bottle/item regions using adaptive gradient energy,
-    bottle-label/cap color saturation, and mid-tone texture variance + Non-Maximum Suppression.
-    Works across both bright outdoor piles and indoor photos of bottles inside woven sacks.
-    """
-    img_640 = pil_img.convert("RGB").resize((640, 640), Image.Resampling.BILINEAR)
-    arr = np.array(img_640, dtype=np.float32)
-    gray = 0.299 * arr[:, :, 0] + 0.587 * arr[:, :, 1] + 0.114 * arr[:, :, 2]
-    sat = np.max(arr, axis=2) - np.min(arr, axis=2)
-    gx = np.abs(np.diff(gray, axis=1, append=gray[:, -1:]))
-    gy = np.abs(np.diff(gray, axis=0, append=gray[-1:, :]))
-    grad = gx + gy
-
-    # Combine edge ridges + color saturation (blue/red labels & bottle caps)
-    feature_map = grad + 0.40 * sat
-    global_feat = float(np.mean(feature_map))
-    global_mid = float(np.mean((gray > 35) & (gray < 235)))
-
-    # If the image is a flat icon/logo with low mid-tone photo texture, keep as 1 item
-    if global_mid < 0.30 or global_feat < 3.5:
-        return [primary_det]
-
-    win_size = 195
-    stride = 55
-    cand_boxes: List[List[float]] = []
-    cand_scores: List[float] = []
-
-    for y in range(16, 640 - win_size, stride):
-        for x in range(16, 640 - win_size, stride):
-            pl = gray[y : y + win_size, x : x + win_size]
-            ps = sat[y : y + win_size, x : x + win_size]
-            pg = grad[y : y + win_size, x : x + win_size]
-
-            # 1. Specular dynamic range: real 3D bottles have bright glints (>215) & deep inter-bottle shadows (<75).
-            #    Flat woven sack/leather walls do NOT have this high dynamic range.
-            dyn_range = float(np.percentile(pl, 97) - np.percentile(pl, 5))
-            # 2. Color saturation 90th percentile: bottle labels (e.g. blue Cway label), caps, or refraction tint
-            #    vs neutral grey/white woven sack leather.
-            sat_p90 = float(np.percentile(ps, 90))
-            edge_mean = float(np.mean(pg))
-
-            if sat_p90 > 24.0 and dyn_range > 125.0 and edge_mean > 7.5:
-                cand_boxes.append([float(x), float(y), float(x + win_size), float(y + win_size)])
-                cand_scores.append(sat_p90 + 0.5 * dyn_range + edge_mean)
-
-    if len(cand_boxes) <= 1:
-        return [primary_det]
-
-    b_np = np.array(cand_boxes, dtype=np.float32)
-    s_np = np.array(cand_scores, dtype=np.float32)
-    keep = numpy_nms(b_np, s_np, iou_threshold=0.19)
-
-    if len(keep) <= 1:
-        return [primary_det]
-
-    max_s = float(np.max(s_np)) + 1e-6
-    base_conf = primary_det["confidence"]
-    sub_list: List[Dict[str, Any]] = []
-    for idx_num, k in enumerate(keep[:12]):
-        rel_conf = round(min(0.99, base_conf * (0.88 + 0.12 * float(s_np[k]) / max_s)), 2)
-        sub_list.append(
-            {
-                "class_id": primary_det["class_id"],
-                "raw_class_name": f"{primary_det['raw_class_name']} #{idx_num + 1}",
-                "bucket_id": primary_det["bucket_id"],
-                "confidence": rel_conf,
-                "box_640": [round(float(v), 1) for v in cand_boxes[k]],
-            }
-        )
-    return sub_list
 
 
 def get_live_rate_for_bucket(bucket_id: str) -> Dict[str, int]:

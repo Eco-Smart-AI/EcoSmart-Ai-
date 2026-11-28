@@ -19,11 +19,12 @@ BASE_DIR = Path(__file__).resolve().parent
 MODELS_DIR = BASE_DIR / "models"
 MODELS_DIR.mkdir(parents=True, exist_ok=True)
 
-# Direct Hugging Face URLs for public YOLOv8 Nano Trash / Waste Detection models
+# Direct Hugging Face URLs for true Instance-Level YOLOv8 Waste Detection models
+# Primary: muaaaa29/Plastic-Waste-Detection-YOLOv8 (boxes every individual PET bottle, HDPE container, carton/UHT-Box, sachet/film at any distance/angle)
 HF_Candidate_URLS = [
-    "https://huggingface.co/kendrickfff/waste-classification-yolov8-ken/resolve/main/yolov8n-waste-12cls-best.pt",
+    "https://huggingface.co/muaaaa29/Plastic-Waste-Detection-YOLOv8/resolve/main/best.pt",
     "https://huggingface.co/HrutikAdsare/waste-detection-yolov8/resolve/main/best.pt",
-    "https://huggingface.co/ShihoAI/yolov8s-garbage-detection/resolve/main/best_yolov8s_final.pt",
+    "https://huggingface.co/kendrickfff/waste-classification-yolov8-ken/resolve/main/yolov8n-waste-12cls-best.pt",
 ]
 
 LOCAL_PT_PATH = MODELS_DIR / "yolov8n_trash_best.pt"
