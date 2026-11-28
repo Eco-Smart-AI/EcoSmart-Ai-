@@ -431,34 +431,35 @@ def decompose_pile_into_instances(
     if global_mid < 0.30 or global_feat < 3.5:
         return [primary_det]
 
-    win_size = 215
-    stride = 58
+    win_size = 195
+    stride = 55
     cand_boxes: List[List[float]] = []
     cand_scores: List[float] = []
 
     for y in range(16, 640 - win_size, stride):
         for x in range(16, 640 - win_size, stride):
-            pf = feature_map[y : y + win_size, x : x + win_size]
             pl = gray[y : y + win_size, x : x + win_size]
             ps = sat[y : y + win_size, x : x + win_size]
-            mid_ratio = float(np.mean((pl > 35) & (pl < 235)))
-            feat_mean = float(np.mean(pf))
-            sat_mean = float(np.mean(ps))
-            std_lum = float(np.std(pl))
+            pg = grad[y : y + win_size, x : x + win_size]
 
-            # Patch must have real 3D bottle contrast (std_lum > 32) plus either label saturation or strong ridges
-            if mid_ratio > 0.48 and std_lum > 32.0 and (
-                feat_mean >= global_feat * 0.92 or sat_mean > 20.0
-            ):
+            # 1. Specular dynamic range: real 3D bottles have bright glints (>215) & deep inter-bottle shadows (<75).
+            #    Flat woven sack/leather walls do NOT have this high dynamic range.
+            dyn_range = float(np.percentile(pl, 97) - np.percentile(pl, 5))
+            # 2. Color saturation 90th percentile: bottle labels (e.g. blue Cway label), caps, or refraction tint
+            #    vs neutral grey/white woven sack leather.
+            sat_p90 = float(np.percentile(ps, 90))
+            edge_mean = float(np.mean(pg))
+
+            if sat_p90 > 24.0 and dyn_range > 125.0 and edge_mean > 7.5:
                 cand_boxes.append([float(x), float(y), float(x + win_size), float(y + win_size)])
-                cand_scores.append(feat_mean + 0.6 * sat_mean)
+                cand_scores.append(sat_p90 + 0.5 * dyn_range + edge_mean)
 
     if len(cand_boxes) <= 1:
         return [primary_det]
 
     b_np = np.array(cand_boxes, dtype=np.float32)
     s_np = np.array(cand_scores, dtype=np.float32)
-    keep = numpy_nms(b_np, s_np, iou_threshold=0.24)
+    keep = numpy_nms(b_np, s_np, iou_threshold=0.19)
 
     if len(keep) <= 1:
         return [primary_det]
