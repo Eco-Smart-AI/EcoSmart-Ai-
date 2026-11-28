@@ -591,31 +591,50 @@ def run_paired_yolo_pipeline(
         max_metal_b = max(
             (d["confidence"] for d in dets_b if d["bucket_id"] == "cans"), default=0.0
         )
+        max_glass_b = max(
+            (d["confidence"] for d in dets_b if d["bucket_id"] == "glass"), default=0.0
+        )
         metal_boxes_b = [
             d for d in dets_b if d["bucket_id"] == "cans" and d["confidence"] >= 0.45
         ]
+        glass_boxes_b = [
+            d for d in dets_b if d["bucket_id"] == "glass" and d["confidence"] >= 0.50
+        ]
 
-        # Only override Model A to Aluminium Cans when:
-        #   1. Model B strongly detects `metal` (>= 0.55 and beating Model B's `plastic` by 0.20+), AND
-        #   2. Model A did NOT detect a high-confidence `PET Bottle` (>= 0.85) on that item
-        #      (Note: on Aluminium Cans, Model A outputs `Single-Use-Plastic` or `UHT-Box`, not high-conf `PET Bottle`).
-        #   3. Never let Model B override Model A's `PET Bottle` to `glass` (Model B confuses clear/green PET with glass).
+        # Pairing rules between Model A (Instance Detector) and Model B (Material Verifier):
+        #   1. True PET bottles (upright, crushed, or piled) have PET ribbing/necks that Model A
+        #      recognizes specifically as `PET Bottle` with high confidence (>= 0.80). Protect these
+        #      so Model B's glass false-positives on clear plastic never override `PET Bottle`.
+        #   2. Smooth glass bottles lack PET ribbing, so Model A mislabels them as `HDPE Plastic`
+        #      (or `Single-Use-Plastic`), while Model B strongly detects `glass` (>= 0.55).
+        #      (Real HDPE jugs are opaque, so Model B never classifies real HDPE as high-conf `glass`.)
+        #   3. Aluminium cans are mislabeled by Model A as `Single-Use-Plastic` or `UHT-Box`,
+        #      while Model B strongly detects `metal` (`cans`, >= 0.55).
         scene_is_metal_cans = max_metal_b >= 0.55 and max_metal_b > (max_plastic_b + 0.20)
+        scene_is_glass = max_glass_b >= 0.55 and max_glass_b > (max_plastic_b + 0.20)
 
         for da in dets_a:
             is_high_conf_pet = (
-                da["raw_class_name"] == "PET Bottle" and da["confidence"] >= 0.85
+                da["raw_class_name"] == "PET Bottle" and da["confidence"] >= 0.80
             )
             if is_high_conf_pet:
                 continue
 
-            if scene_is_metal_cans:
+            if scene_is_metal_cans and max_metal_b >= max_glass_b:
                 da["bucket_id"] = "cans"
                 da["raw_class_name"] = "Aluminium Can"
                 da["yolo_norm"][0] = BUCKET_INDEX_FOR_YOLO_TXT["cans"]
                 da["model_source"] = "paired_instance+can_verifier"
                 continue
 
+            if scene_is_glass and max_glass_b > max_metal_b:
+                da["bucket_id"] = "glass"
+                da["raw_class_name"] = "Glass Bottle"
+                da["yolo_norm"][0] = BUCKET_INDEX_FOR_YOLO_TXT["glass"]
+                da["model_source"] = "paired_instance+glass_verifier"
+                continue
+
+            overridden = False
             for db in metal_boxes_b:
                 overlap = box_iou_1d(da["box_640"], db["box_640"])
                 if overlap > 0.25 and db["confidence"] >= max(0.50, max_plastic_b + 0.15):
@@ -623,7 +642,18 @@ def run_paired_yolo_pipeline(
                     da["raw_class_name"] = "Aluminium Can"
                     da["yolo_norm"][0] = BUCKET_INDEX_FOR_YOLO_TXT["cans"]
                     da["model_source"] = "paired_instance+can_verifier"
+                    overridden = True
                     break
+
+            if not overridden:
+                for db in glass_boxes_b:
+                    overlap = box_iou_1d(da["box_640"], db["box_640"])
+                    if overlap > 0.25 and db["confidence"] >= max(0.55, max_plastic_b + 0.15):
+                        da["bucket_id"] = "glass"
+                        da["raw_class_name"] = "Glass Bottle"
+                        da["yolo_norm"][0] = BUCKET_INDEX_FOR_YOLO_TXT["glass"]
+                        da["model_source"] = "paired_instance+glass_verifier"
+                        break
 
     return dets_a, meta, img_rgb
 
