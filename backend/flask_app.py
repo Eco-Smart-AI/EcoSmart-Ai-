@@ -540,22 +540,27 @@ def box_iou_1d(box_a: List[float], box_b: List[float]) -> float:
 
 
 def run_paired_yolo_pipeline(
-    pil_img: Image.Image, conf_thres: float = 0.25
+    pil_img: Image.Image, conf_thres: float = 0.22
 ) -> Tuple[List[Dict[str, Any]], Dict[str, float], Image.Image]:
     """
     Sequential Paired Pipeline:
       1. Runs Model A (`INSTANCE_SESSION` — `muaaaa29/Plastic-Waste-Detection-YOLOv8`) to detect
-         and count individual items (`PET Bottle`, `HDPE Plastic`, `UHT-Box`, `Single-layer Plastic`).
+         and count individual items (`PET Bottle`, `HDPE Plastic`, `UHT-Box`, `Single-Use-Plastic`).
       2. Runs Model B (`MATERIAL_SESSION` — `HrutikAdsare/waste-detection-yolov8`) sequentially
          to check for non-plastic materials (`metal`/cans, `cardboard`, `paper`, `glass`):
-         - If Model B detects `metal` (`cans`) or `glass` or `cardboard` overlapping Model A's
-           `"PET Bottle"` boxes (because Model A only knows plastic classes and mistakes
-           cylindrical aluminium cans for PET bottles), it re-labels those boxes with Model B's
-           material (`metal` -> `cans`, `glass` -> `glass`, `cardboard` -> `carton`) while
-           keeping Model A's exact individual item count!
-         - If Model A found 0 boxes (e.g. a photo of cans, cardboard, or glass that Model A
-           missed completely), Model B's detections are returned directly.
+         - Because Model A has ZERO metal/can or glass classes in its training set, it boxes
+           individual Aluminium Cans or Glass Bottles accurately by shape, but mislabels them
+           as `Single-Use-Plastic`, `PET Bottle`, or `UHT-Box`.
+         - Whenever Model B detects `metal` (`cans`) or `glass` (with higher confidence than
+           Model B's `plastic` class), every individual box from Model A overlapping that region
+           is re-labeled to `Aluminium Can` (`cans`) or `Glass Bottle` (`glass`) while keeping
+           Model A's individual item boxes and count!
     """
+    if (INSTANCE_SESSION is None and INSTANCE_ONNX_PATH.exists()) or (
+        MATERIAL_SESSION is None and MATERIAL_ONNX_PATH.exists()
+    ):
+        load_paired_onnx_models()
+
     input_tensor, meta, img_rgb = preprocess_image_letterbox(pil_img, size=640)
 
     dets_a = run_single_session(
@@ -572,44 +577,62 @@ def run_paired_yolo_pipeline(
         MATERIAL_CLASSES,
         input_tensor,
         meta,
-        conf_thres=0.25,
+        conf_thres=0.10,
         source_tag="material_verifier",
     )
 
     if not dets_a:
-        return dets_b, meta, img_rgb
+        return [d for d in dets_b if d["confidence"] >= 0.25], meta, img_rgb
 
     if dets_b:
-        # Check if Model B sees non-plastic materials (cans/metal, glass, cardboard)
-        # while NOT seeing high-confidence plastic
         max_plastic_b = max(
             (d["confidence"] for d in dets_b if d["bucket_id"] == "pet"), default=0.0
         )
+        max_metal_b = max(
+            (d["confidence"] for d in dets_b if d["bucket_id"] == "cans"), default=0.0
+        )
+        max_glass_b = max(
+            (d["confidence"] for d in dets_b if d["bucket_id"] == "glass"), default=0.0
+        )
         non_plastic_b = [
-            d for d in dets_b if d["bucket_id"] in ("cans", "glass", "carton")
+            d for d in dets_b if d["bucket_id"] in ("cans", "glass", "carton") and d["confidence"] >= 0.25
         ]
 
-        for da in dets_a:
-            if da["bucket_id"] == "pet":
-                for db in non_plastic_b:
-                    overlap = box_iou_1d(da["box_640"], db["box_640"])
-                    # Override "PET Bottle" -> "Aluminium Can / Glass / Carton" when Model B
-                    # strongly identifies the object as non-plastic
-                    if overlap > 0.25 and db["confidence"] >= max(0.38, max_plastic_b + 0.08):
-                        da["bucket_id"] = db["bucket_id"]
-                        da["raw_class_name"] = f"{db['raw_class_name']} (verified)"
-                        da["yolo_norm"][0] = BUCKET_INDEX_FOR_YOLO_TXT.get(db["bucket_id"], 0)
-                        da["model_source"] = "paired_instance+material"
-                        break
+        # Global scene override when Model B strongly sees Metal/Cans (e.g. 90% metal, 0% plastic)
+        scene_is_metal_cans = max_metal_b >= 0.55 and max_metal_b > (max_plastic_b + 0.15)
+        scene_is_glass = max_glass_b >= 0.60 and max_glass_b > (max_plastic_b + 0.15) and max_glass_b > max_metal_b
 
-        # Also append any distinct non-plastic items from Model B that don't overlap Model A
-        for db in non_plastic_b:
-            if db["confidence"] >= 0.45:
-                overlaps_any = any(
-                    box_iou_1d(da["box_640"], db["box_640"]) > 0.30 for da in dets_a
-                )
-                if not overlaps_any:
-                    dets_a.append(db)
+        for da in dets_a:
+            if scene_is_metal_cans:
+                da["bucket_id"] = "cans"
+                da["raw_class_name"] = "Aluminium Can"
+                da["yolo_norm"][0] = BUCKET_INDEX_FOR_YOLO_TXT["cans"]
+                da["model_source"] = "paired_instance+can_verifier"
+                continue
+
+            if scene_is_glass:
+                da["bucket_id"] = "glass"
+                da["raw_class_name"] = "Glass Bottle"
+                da["yolo_norm"][0] = BUCKET_INDEX_FOR_YOLO_TXT["glass"]
+                da["model_source"] = "paired_instance+glass_verifier"
+                continue
+
+            # Per-box overlap check for mixed scenes (e.g. cans next to plastic bottles)
+            for db in non_plastic_b:
+                overlap = box_iou_1d(da["box_640"], db["box_640"])
+                if overlap > 0.20 and db["confidence"] >= max(0.38, max_plastic_b + 0.08):
+                    da["bucket_id"] = db["bucket_id"]
+                    friendly_name = (
+                        "Aluminium Can"
+                        if db["bucket_id"] == "cans"
+                        else "Glass Bottle"
+                        if db["bucket_id"] == "glass"
+                        else "Cardboard Carton"
+                    )
+                    da["raw_class_name"] = friendly_name
+                    da["yolo_norm"][0] = BUCKET_INDEX_FOR_YOLO_TXT.get(db["bucket_id"], 0)
+                    da["model_source"] = "paired_instance+material"
+                    break
 
     return dets_a, meta, img_rgb
 
