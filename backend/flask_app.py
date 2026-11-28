@@ -591,18 +591,24 @@ def run_paired_yolo_pipeline(
         max_metal_b = max(
             (d["confidence"] for d in dets_b if d["bucket_id"] == "cans"), default=0.0
         )
-        max_glass_b = max(
-            (d["confidence"] for d in dets_b if d["bucket_id"] == "glass"), default=0.0
-        )
-        non_plastic_b = [
-            d for d in dets_b if d["bucket_id"] in ("cans", "glass", "carton") and d["confidence"] >= 0.25
+        metal_boxes_b = [
+            d for d in dets_b if d["bucket_id"] == "cans" and d["confidence"] >= 0.45
         ]
 
-        # Global scene override when Model B strongly sees Metal/Cans (e.g. 90% metal, 0% plastic)
-        scene_is_metal_cans = max_metal_b >= 0.55 and max_metal_b > (max_plastic_b + 0.15)
-        scene_is_glass = max_glass_b >= 0.60 and max_glass_b > (max_plastic_b + 0.15) and max_glass_b > max_metal_b
+        # Only override Model A to Aluminium Cans when:
+        #   1. Model B strongly detects `metal` (>= 0.55 and beating Model B's `plastic` by 0.20+), AND
+        #   2. Model A did NOT detect a high-confidence `PET Bottle` (>= 0.85) on that item
+        #      (Note: on Aluminium Cans, Model A outputs `Single-Use-Plastic` or `UHT-Box`, not high-conf `PET Bottle`).
+        #   3. Never let Model B override Model A's `PET Bottle` to `glass` (Model B confuses clear/green PET with glass).
+        scene_is_metal_cans = max_metal_b >= 0.55 and max_metal_b > (max_plastic_b + 0.20)
 
         for da in dets_a:
+            is_high_conf_pet = (
+                da["raw_class_name"] == "PET Bottle" and da["confidence"] >= 0.85
+            )
+            if is_high_conf_pet:
+                continue
+
             if scene_is_metal_cans:
                 da["bucket_id"] = "cans"
                 da["raw_class_name"] = "Aluminium Can"
@@ -610,28 +616,13 @@ def run_paired_yolo_pipeline(
                 da["model_source"] = "paired_instance+can_verifier"
                 continue
 
-            if scene_is_glass:
-                da["bucket_id"] = "glass"
-                da["raw_class_name"] = "Glass Bottle"
-                da["yolo_norm"][0] = BUCKET_INDEX_FOR_YOLO_TXT["glass"]
-                da["model_source"] = "paired_instance+glass_verifier"
-                continue
-
-            # Per-box overlap check for mixed scenes (e.g. cans next to plastic bottles)
-            for db in non_plastic_b:
+            for db in metal_boxes_b:
                 overlap = box_iou_1d(da["box_640"], db["box_640"])
-                if overlap > 0.20 and db["confidence"] >= max(0.38, max_plastic_b + 0.08):
-                    da["bucket_id"] = db["bucket_id"]
-                    friendly_name = (
-                        "Aluminium Can"
-                        if db["bucket_id"] == "cans"
-                        else "Glass Bottle"
-                        if db["bucket_id"] == "glass"
-                        else "Cardboard Carton"
-                    )
-                    da["raw_class_name"] = friendly_name
-                    da["yolo_norm"][0] = BUCKET_INDEX_FOR_YOLO_TXT.get(db["bucket_id"], 0)
-                    da["model_source"] = "paired_instance+material"
+                if overlap > 0.25 and db["confidence"] >= max(0.50, max_plastic_b + 0.15):
+                    da["bucket_id"] = "cans"
+                    da["raw_class_name"] = "Aluminium Can"
+                    da["yolo_norm"][0] = BUCKET_INDEX_FOR_YOLO_TXT["cans"]
+                    da["model_source"] = "paired_instance+can_verifier"
                     break
 
     return dets_a, meta, img_rgb
