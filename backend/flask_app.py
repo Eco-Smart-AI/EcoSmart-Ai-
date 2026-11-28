@@ -409,38 +409,56 @@ def decompose_pile_into_instances(
     pil_img: Image.Image, primary_det: Dict[str, Any]
 ) -> List[Dict[str, Any]]:
     """
-    When a user scans a dense pile of bottles/cans (where the classifier draws 1 box
-    over the whole frame), locates individual bottle/item regions using specular ridge
-    gradients and mid-tone texture variance + Non-Maximum Suppression.
+    When a user scans a dense pile or sack of bottles/cans (where the classifier draws 1 box
+    over the whole frame), locates individual bottle/item regions using adaptive gradient energy,
+    bottle-label/cap color saturation, and mid-tone texture variance + Non-Maximum Suppression.
+    Works across both bright outdoor piles and indoor photos of bottles inside woven sacks.
     """
     img_640 = pil_img.convert("RGB").resize((640, 640), Image.Resampling.BILINEAR)
     arr = np.array(img_640, dtype=np.float32)
     gray = 0.299 * arr[:, :, 0] + 0.587 * arr[:, :, 1] + 0.114 * arr[:, :, 2]
+    sat = np.max(arr, axis=2) - np.min(arr, axis=2)
     gx = np.abs(np.diff(gray, axis=1, append=gray[:, -1:]))
     gy = np.abs(np.diff(gray, axis=0, append=gray[-1:, :]))
     grad = gx + gy
 
+    # Combine edge ridges + color saturation (blue/red labels & bottle caps)
+    feature_map = grad + 0.40 * sat
+    global_feat = float(np.mean(feature_map))
+    global_mid = float(np.mean((gray > 35) & (gray < 235)))
+
+    # If the image is a flat icon/logo with low mid-tone photo texture, keep as 1 item
+    if global_mid < 0.30 or global_feat < 3.5:
+        return [primary_det]
+
     win_size = 215
-    stride = 60
+    stride = 58
     cand_boxes: List[List[float]] = []
     cand_scores: List[float] = []
 
-    for y in range(12, 640 - win_size, stride):
-        for x in range(12, 640 - win_size, stride):
-            pg = grad[y : y + win_size, x : x + win_size]
+    for y in range(16, 640 - win_size, stride):
+        for x in range(16, 640 - win_size, stride):
+            pf = feature_map[y : y + win_size, x : x + win_size]
             pl = gray[y : y + win_size, x : x + win_size]
+            ps = sat[y : y + win_size, x : x + win_size]
             mid_ratio = float(np.mean((pl > 35) & (pl < 235)))
-            edge_mean = float(np.mean(pg))
-            if edge_mean > 12.5 and mid_ratio > 0.58:
+            feat_mean = float(np.mean(pf))
+            sat_mean = float(np.mean(ps))
+            std_lum = float(np.std(pl))
+
+            # Patch must have real 3D bottle contrast (std_lum > 32) plus either label saturation or strong ridges
+            if mid_ratio > 0.48 and std_lum > 32.0 and (
+                feat_mean >= global_feat * 0.92 or sat_mean > 20.0
+            ):
                 cand_boxes.append([float(x), float(y), float(x + win_size), float(y + win_size)])
-                cand_scores.append(edge_mean * mid_ratio)
+                cand_scores.append(feat_mean + 0.6 * sat_mean)
 
     if len(cand_boxes) <= 1:
         return [primary_det]
 
     b_np = np.array(cand_boxes, dtype=np.float32)
     s_np = np.array(cand_scores, dtype=np.float32)
-    keep = numpy_nms(b_np, s_np, iou_threshold=0.22)
+    keep = numpy_nms(b_np, s_np, iou_threshold=0.24)
 
     if len(keep) <= 1:
         return [primary_det]
@@ -449,7 +467,7 @@ def decompose_pile_into_instances(
     base_conf = primary_det["confidence"]
     sub_list: List[Dict[str, Any]] = []
     for idx_num, k in enumerate(keep[:12]):
-        rel_conf = round(min(0.99, base_conf * (0.85 + 0.15 * float(s_np[k]) / max_s)), 2)
+        rel_conf = round(min(0.99, base_conf * (0.88 + 0.12 * float(s_np[k]) / max_s)), 2)
         sub_list.append(
             {
                 "class_id": primary_det["class_id"],
