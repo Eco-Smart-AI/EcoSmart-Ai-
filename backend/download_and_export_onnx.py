@@ -1,15 +1,18 @@
 """
-Step 1 (Run this locally where you already ran `pip install ultralytics`):
-Downloads `arnabdhar/YOLOv8-nano-trash-detection` from Hugging Face
-and exports it to a lightweight `.onnx` file (`backend/models/ecosmart_waste.onnx`)
-plus `backend/models/classes.json` ready to upload to PythonAnywhere!
+Downloads and exports the paired YOLOv8 ONNX models for EcoSmart AI:
+  1. `models/ecosmart_waste.onnx` (`muaaaa29/Plastic-Waste-Detection-YOLOv8`):
+     Multi-instance detector that boxes and counts individual bottles, HDPE containers,
+     nylons/sachets, and UHT drink cartons at any scale/angle.
+  2. `models/ecosmart_material.onnx` (`HrutikAdsare/waste-detection-yolov8`):
+     Multi-material verifier (`metal`/cans, `cardboard`, `glass`, `paper`, `plastic`, `e-waste`)
+     that runs sequentially to detect Aluminium Cans, Glass, and Cardboard and prevent
+     aluminium cans from being misclassified as plastic bottles.
 
 Usage:
     python backend/download_and_export_onnx.py
 """
 
 import json
-import os
 import shutil
 import urllib.request
 from pathlib import Path
@@ -19,83 +22,73 @@ BASE_DIR = Path(__file__).resolve().parent
 MODELS_DIR = BASE_DIR / "models"
 MODELS_DIR.mkdir(parents=True, exist_ok=True)
 
-# Direct Hugging Face URLs for true Instance-Level YOLOv8 Waste Detection models
-# Primary: muaaaa29/Plastic-Waste-Detection-YOLOv8 (boxes every individual PET bottle, HDPE container, carton/UHT-Box, sachet/film at any distance/angle)
-HF_Candidate_URLS = [
-    "https://huggingface.co/muaaaa29/Plastic-Waste-Detection-YOLOv8/resolve/main/best.pt",
-    "https://huggingface.co/HrutikAdsare/waste-detection-yolov8/resolve/main/best.pt",
-    "https://huggingface.co/kendrickfff/waste-classification-yolov8-ken/resolve/main/yolov8n-waste-12cls-best.pt",
+MODELS_TO_EXPORT = [
+    {
+        "name": "Instance Detector (muaaaa29/Plastic-Waste-Detection-YOLOv8)",
+        "url": "https://huggingface.co/muaaaa29/Plastic-Waste-Detection-YOLOv8/resolve/main/best.pt",
+        "pt_path": MODELS_DIR / "instance_detector.pt",
+        "onnx_path": MODELS_DIR / "ecosmart_waste.onnx",
+        "classes_path": MODELS_DIR / "classes.json",
+    },
+    {
+        "name": "Material & Can Verifier (HrutikAdsare/waste-detection-yolov8)",
+        "url": "https://huggingface.co/HrutikAdsare/waste-detection-yolov8/resolve/main/best.pt",
+        "pt_path": MODELS_DIR / "material_verifier.pt",
+        "onnx_path": MODELS_DIR / "ecosmart_material.onnx",
+        "classes_path": MODELS_DIR / "material_classes.json",
+    },
 ]
 
-LOCAL_PT_PATH = MODELS_DIR / "yolov8n_trash_best.pt"
-FINAL_ONNX_PATH = MODELS_DIR / "ecosmart_waste.onnx"
-CLASSES_JSON_PATH = MODELS_DIR / "classes.json"
+
+def download_file(url: str, dest: Path) -> None:
+    if dest.exists() and dest.stat().st_size > 100_000:
+        print(f"[✓] Using cached weights: {dest.name}")
+        return
+    print(f"[*] Downloading {url} -> {dest.name} ...")
+    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (EcoSmart-AI)"})
+    with urllib.request.urlopen(req, timeout=60) as resp, open(dest, "wb") as out_f:
+        shutil.copyfileobj(resp, out_f)
+    print(f"[✓] Downloaded {dest.name} ({dest.stat().st_size / 1e6:.2f} MB)")
 
 
-def download_hf_weights() -> Path:
-    if LOCAL_PT_PATH.exists() and LOCAL_PT_PATH.stat().st_size > 100_000:
-        print(f"[✓] Found existing weights at: {LOCAL_PT_PATH}")
-        return LOCAL_PT_PATH
+def export_one(cfg: dict) -> None:
+    pt_path: Path = cfg["pt_path"]
+    onnx_path: Path = cfg["onnx_path"]
+    classes_path: Path = cfg["classes_path"]
 
-    print("[*] Downloading YOLOv8 Nano Waste Detection weights from Hugging Face...")
-    headers = {"User-Agent": "Mozilla/5.0 (EcoSmart-AI-Model-Exporter)"}
+    download_file(cfg["url"], pt_path)
 
-    for url in HF_Candidate_URLS:
-        try:
-            print(f"    Trying: {url}")
-            req = urllib.request.Request(url, headers=headers)
-            with urllib.request.urlopen(req, timeout=45) as resp, open(LOCAL_PT_PATH, "wb") as out_f:
-                shutil.copyfileobj(resp, out_f)
-            if LOCAL_PT_PATH.stat().st_size > 100_000:
-                print(f"[✓] Downloaded successfully ({LOCAL_PT_PATH.stat().st_size / 1e6:.2f} MB)")
-                return LOCAL_PT_PATH
-        except Exception as err:
-            print(f"    [!] Could not fetch {url}: {err}")
+    model = YOLO(str(pt_path))
+    class_map = {str(k): v for k, v in model.names.items()}
+    with open(classes_path, "w", encoding="utf-8") as f:
+        json.dump(class_map, f, indent=2)
+    print(f"[✓] {cfg['name']} classes: {class_map}")
 
-    # Fallback: try huggingface_hub if installed
-    try:
-        from huggingface_hub import hf_hub_download, list_repo_files
-        files = list_repo_files(HF_REPO_ID)
-        pt_files = [f for f in files if f.endswith(".pt")]
-        if pt_files:
-            downloaded = hf_hub_download(repo_id=HF_REPO_ID, filename=pt_files[0])
-            shutil.copy(downloaded, LOCAL_PT_PATH)
-            print(f"[✓] Downloaded {pt_files[0]} via huggingface_hub")
-            return LOCAL_PT_PATH
-    except Exception as hub_err:
-        print(f"    [!] huggingface_hub fallback skipped: {hub_err}")
+    if not onnx_path.exists():
+        print(f"[*] Exporting {pt_path.name} -> {onnx_path.name} ...")
+        exported = Path(model.export(format="onnx", imgsz=640))
+        if exported.resolve() != onnx_path.resolve():
+            shutil.move(str(exported), str(onnx_path))
 
-    print("[!] Falling back to base yolov8n.pt so you can still export immediately...")
-    return Path("yolov8n.pt")
+    # Clean up temporary .pt file to save disk space
+    if pt_path.exists():
+        pt_path.unlink()
 
 
 def main():
-    pt_file = download_hf_weights()
+    tmp_bench = MODELS_DIR / "tmp_bench" / "hrutik_waste.pt"
+    if tmp_bench.exists() and not (MODELS_DIR / "material_verifier.pt").exists():
+        shutil.move(str(tmp_bench), str(MODELS_DIR / "material_verifier.pt"))
+    shutil.rmtree(MODELS_DIR / "tmp_bench", ignore_errors=True)
 
-    print(f"[*] Loading YOLO model from: {pt_file}")
-    model = YOLO(str(pt_file))
+    for cfg in MODELS_TO_EXPORT:
+        export_one(cfg)
 
-    # Save exact class index -> class name dictionary for PythonAnywhere ONNX runtime
-    class_names = {str(k): v for k, v in model.names.items()}
-    with open(CLASSES_JSON_PATH, "w", encoding="utf-8") as f:
-        json.dump(class_names, f, indent=2)
-    print(f"[✓] Saved {len(class_names)} model classes to: {CLASSES_JSON_PATH}")
-    print(f"    Classes: {class_names}")
-
-    # Export to ONNX (640x640)
-    print("[*] Exporting model to ONNX format (640x640)...")
-    exported_path = model.export(format="onnx", imgsz=640)
-    exported_path = Path(exported_path)
-
-    if exported_path.resolve() != FINAL_ONNX_PATH.resolve():
-        shutil.move(str(exported_path), str(FINAL_ONNX_PATH))
-
-    size_mb = FINAL_ONNX_PATH.stat().st_size / (1024 * 1024)
     print("\n" + "=" * 65)
-    print(f"[SUCCESS] ONNX model ready: {FINAL_ONNX_PATH} ({size_mb:.2f} MB)")
-    print(f"[SUCCESS] Classes JSON ready: {CLASSES_JSON_PATH}")
-    print("Upload the `backend/` folder (including `backend/models/ecosmart_waste.onnx`)")
-    print("to PythonAnywhere — NO PyTorch or Ultralytics needed on PythonAnywhere!")
+    print("[SUCCESS] Both paired ONNX models are ready in backend/models/:")
+    for cfg in MODELS_TO_EXPORT:
+        mb = cfg["onnx_path"].stat().st_size / (1024 * 1024)
+        print(f"  - {cfg['onnx_path'].name} ({mb:.2f} MB)")
     print("=" * 65)
 
 

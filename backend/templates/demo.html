@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>EcoSmart AI — YOLOv8 Nano Trash Detection & 1kg Price Demo</title>
+  <title>EcoSmart AI — Paired YOLOv8 Waste Vision & 1kg Price Lab</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
@@ -19,25 +19,25 @@
           ♻️
         </div>
         <div>
-          <h1 class="text-lg font-extrabold text-slate-900">EcoSmart AI — Waste Vision & 1kg Price Lab</h1>
-          <p class="text-xs text-slate-500">Standalone Python Flask + ONNX Runtime + HTML/JS Test App (Kubwa, Abuja Pilot)</p>
+          <h1 class="text-lg font-extrabold text-slate-900">EcoSmart AI — Paired YOLOv8 Waste Vision & 1kg Lab</h1>
+          <p class="text-xs text-slate-500">Letterbox Aspect-Ratio Preserved · Per-Class NMS · Multi-Material Valuation (Plastics + Cans + Cartons + Glass)</p>
         </div>
       </div>
       <div id="healthBadge" class="px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center gap-2">
         <span class="w-2 h-2 rounded-full bg-emerald-600 animate-pulse"></span>
-        <span>Checking ONNX model...</span>
+        <span>Checking paired ONNX models...</span>
       </div>
     </div>
   </header>
 
   <main class="max-w-6xl mx-auto px-6 mt-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
-    <!-- LEFT COLUMN: IMAGE UPLOAD / CAMERA + BOUNDING BOX CANVAS -->
+    <!-- LEFT COLUMN: IMAGE UPLOAD / CAMERA + UN-SQUASHED BOUNDING BOX CANVAS -->
     <section class="lg:col-span-7 space-y-5">
       <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
         <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
           <div>
-            <h2 class="text-base font-extrabold text-slate-900">1. Scan Waste Photo (640×640 Auto-Resize)</h2>
-            <p class="text-xs text-slate-500">Upload a photo of bottles/cans/cartons or use your webcam</p>
+            <h2 class="text-base font-extrabold text-slate-900">1. Scan Waste Photo (Letterbox Aspect-Ratio Preserved)</h2>
+            <p class="text-xs text-slate-500">Upload a photo of bottles, cans, cartons, or sachets — no aspect-ratio distortion</p>
           </div>
           <div class="flex gap-2">
             <label class="cursor-pointer bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold px-3.5 py-2 rounded-lg transition">
@@ -50,12 +50,12 @@
           </div>
         </div>
 
-        <!-- Webcam live preview (hidden until clicked) -->
+        <!-- Webcam live preview -->
         <div id="webcamBox" class="hidden mb-4 bg-slate-900 rounded-xl overflow-hidden relative">
           <video id="webcamVideo" autoplay playsinline class="w-full max-h-80 object-contain"></video>
           <div class="p-3 bg-slate-900/80 flex justify-center gap-3">
             <button id="snapBtn" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2 rounded-lg">
-              ⚡ Snap & Run YOLOv8
+              ⚡ Snap & Run Paired YOLOv8
             </button>
             <button id="closeCamBtn" class="bg-slate-700 text-white text-xs font-bold px-3 py-2 rounded-lg">
               Cancel
@@ -63,68 +63,75 @@
           </div>
         </div>
 
-        <!-- 640x640 Canvas where image & YOLOv8 bounding boxes are drawn -->
-        <div class="bg-slate-900 rounded-xl overflow-hidden flex items-center justify-center relative min-h-[320px]">
-          <canvas id="scanCanvas" width="640" height="640" class="max-w-full max-h-[420px] object-contain"></canvas>
+        <!-- Canvas preserves original aspect ratio -->
+        <div class="bg-slate-900 rounded-xl overflow-hidden flex items-center justify-center relative min-h-[340px]">
+          <canvas id="scanCanvas" width="800" height="600" class="max-w-full max-h-[440px] object-contain"></canvas>
           <div id="canvasPlaceholder" class="absolute inset-0 flex flex-col items-center justify-center text-slate-400 p-6 text-center pointer-events-none">
             <div class="text-4xl mb-2">🧴🥫📦</div>
-            <p class="text-sm font-bold text-slate-200">Drop or upload a waste photo to run YOLOv8 ONNX detection</p>
-            <p class="text-xs text-slate-400 mt-1">Resizes to 640×640 (~45 KB) in the browser before sending to Python</p>
+            <p class="text-sm font-bold text-slate-200">Upload a waste photo to run Paired YOLOv8 ONNX detection</p>
+            <p class="text-xs text-slate-400 mt-1">Model A counts individual bottles/containers · Model B verifies Aluminium Cans, Glass & Cardboard</p>
           </div>
         </div>
 
         <!-- Detection Stats Strip -->
         <div class="mt-3 flex flex-wrap items-center justify-between text-xs text-slate-500 gap-2 pt-2 border-t border-slate-100">
           <div>Inference speed: <strong id="infSpeed" class="text-slate-800">— ms</strong></div>
-          <div>Compressed size: <strong id="imgSize" class="text-slate-800">— KB</strong></div>
+          <div>Upload size: <strong id="imgSize" class="text-slate-800">— KB</strong></div>
           <div>Detections: <strong id="detCountBadge" class="text-emerald-700">0 boxes</strong></div>
         </div>
 
-        <!-- Quick Simulator Buttons (Test 1 bottle, 2 bottles, 1kg, 3kg without needing a photo) -->
+        <!-- Quick Simulator Buttons (explicitly sends is_simulation: true) -->
         <div class="mt-4 pt-4 border-t border-slate-200">
           <div class="text-xs font-bold text-slate-700 mb-2">
-            Quick Math Simulator (Test different counts or materials immediately):
+            Quick Math Simulator (Test 1kg & Naira math without uploading a photo):
           </div>
           <div class="flex flex-wrap gap-2">
             <button onclick="simulateScan('pet', 1)" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-emerald-50 text-xs font-semibold text-slate-700 border border-slate-200">
-              1 PET Bottle (20g)
+              1 PET Bottle (~20g)
             </button>
-            <button onclick="simulateScan('pet', 2)" class="px-3 py-1.5 rounded-lg bg-emerald-50 text-xs font-bold text-emerald-800 border border-emerald-300">
-              2 PET Bottles (0.04 kg)
-            </button>
-            <button onclick="simulateScan('pet', 25)" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-emerald-50 text-xs font-semibold text-slate-700 border border-slate-200">
-              25 PET Bottles (0.5 kg)
+            <button onclick="simulateScan('pet', 8)" class="px-3 py-1.5 rounded-lg bg-emerald-50 text-xs font-bold text-emerald-800 border border-emerald-300">
+              8 PET Bottles (~0.16 kg)
             </button>
             <button onclick="simulateScan('pet', 50)" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-emerald-50 text-xs font-semibold text-slate-700 border border-slate-200">
               50 PET Bottles (1.0 kg)
             </button>
-            <button onclick="simulateScan('cans', 10)" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-emerald-50 text-xs font-semibold text-slate-700 border border-slate-200">
-              10 Aluminium Cans (0.15 kg)
+            <button onclick="simulateScan('cans', 15)" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-emerald-50 text-xs font-semibold text-slate-700 border border-slate-200">
+              15 Aluminium Cans (~0.23 kg)
             </button>
-            <button onclick="simulateScan('sachet', 40)" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-emerald-50 text-xs font-semibold text-slate-700 border border-slate-200">
-              40 Pure Water Sachets
+            <button onclick="simulateScan('carton', 4)" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-emerald-50 text-xs font-semibold text-slate-700 border border-slate-200">
+              4 Cartons (~0.5 kg)
+            </button>
+            <button onclick="simulateScan('sachet', 60)" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-emerald-50 text-xs font-semibold text-slate-700 border border-slate-200">
+              60 Pure Water Sachets
             </button>
           </div>
         </div>
       </div>
 
-      <!-- Raw Detections List -->
-      <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-        <h3 class="text-sm font-extrabold text-slate-900 mb-2">YOLOv8 Bounding Box Detections</h3>
-        <div id="detectionsList" class="text-xs text-slate-500 space-y-1.5">
+      <!-- Multi-Material Breakdown & Bounding Boxes List -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-3">
+        <h3 class="text-sm font-extrabold text-slate-900">Per-Material Breakdown & Bounding Boxes</h3>
+        <div id="breakdownList" class="text-xs text-slate-600 space-y-1.5"></div>
+        <div id="detectionsList" class="text-xs text-slate-500 space-y-1.5 max-h-56 overflow-y-auto">
           Upload an image or click a simulator button above to see detections.
         </div>
       </div>
     </section>
 
-    <!-- RIGHT COLUMN: BOTTLE -> 1KG CALCULATOR, PRICE & CUSTOM NIGERIAN NAME LEARNING -->
+    <!-- RIGHT COLUMN: BOTTLE -> 1KG CALCULATOR, PRICE & SELECTIVE TRAINING VAULT -->
     <section class="lg:col-span-5 space-y-5">
+      <!-- Honest Empty State Banner (shown when a photo has 0 detections) -->
+      <div id="emptyAlertBox" class="hidden bg-amber-50 border border-amber-300 rounded-2xl p-4 text-xs text-amber-900 space-y-1">
+        <div class="font-extrabold text-sm">⚠️ No recyclables detected in this photo</div>
+        <p id="emptyAlertMsg">Try a closer, well-lit photo or enter items manually below.</p>
+      </div>
+
       <!-- Valuation & 1kg Conversion Card -->
       <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
         <div class="flex items-start justify-between">
           <div>
             <span class="text-[11px] font-extrabold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full">
-              2. Bottle-to-1kg & Price Engine
+              2. Multi-Material 1kg & Price Engine
             </span>
             <h2 id="matTitle" class="text-xl font-extrabold text-slate-900 mt-2">Clear PET Plastic Bottles</h2>
             <p id="matExamples" class="text-xs text-slate-500">Eva, Coke, Pepsi, Bigi, Cway water & soda bottles</p>
@@ -145,17 +152,17 @@
                 <button onclick="adjustLiveCount(1)" class="w-5 h-5 rounded bg-white border border-slate-300 text-xs font-extrabold hover:bg-slate-100">+</button>
               </div>
             </div>
-            <div id="countVal" class="text-xl font-extrabold text-slate-900 mt-0.5">2 bottles</div>
+            <div id="countVal" class="text-xl font-extrabold text-slate-900 mt-0.5">8 bottles</div>
             <div id="unitGrams" class="text-[11px] text-slate-400">~20g each</div>
           </div>
           <div class="bg-slate-50 border border-slate-200 rounded-xl p-3">
-            <div class="text-[11px] text-slate-500">Actual Weight</div>
-            <div id="weightVal" class="text-xl font-extrabold text-slate-900 mt-0.5">0.04 kg</div>
+            <div class="text-[11px] text-slate-500">Est. Weight Range</div>
+            <div id="weightVal" class="text-lg font-extrabold text-slate-900 mt-0.5">0.14–0.18 kg</div>
             <div id="unitsPerKgNote" class="text-[11px] text-emerald-700 font-bold">50 = 1 kg</div>
           </div>
           <div class="bg-emerald-900 text-white rounded-xl p-3">
             <div class="text-[11px] text-emerald-200">Est. Value</div>
-            <div id="payoutVal" class="text-xl font-extrabold mt-0.5">₦5</div>
+            <div id="payoutVal" class="text-xl font-extrabold mt-0.5">₦19</div>
             <div id="oneKgValueNote" class="text-[11px] text-emerald-200">1 kg = ₦120</div>
           </div>
         </div>
@@ -163,27 +170,27 @@
         <!-- Progress bar towards 1 kg -->
         <div class="bg-emerald-50/70 border border-emerald-200 rounded-xl p-3.5 space-y-2">
           <div class="flex justify-between text-xs font-bold text-emerald-950">
-            <span>Progress to 1 kg (<span id="progRatio">2 / 50 bottles</span>)</span>
-            <span id="progPct">4%</span>
+            <span>Progress to 1 kg (<span id="progRatio">8 / 50 bottles</span>)</span>
+            <span id="progPct">16%</span>
           </div>
           <div class="w-full h-2.5 bg-white rounded-full overflow-hidden border border-emerald-200">
-            <div id="progBar" class="h-full bg-emerald-600 transition-all duration-300" style="width: 4%"></div>
+            <div id="progBar" class="h-full bg-emerald-600 transition-all duration-300" style="width: 16%"></div>
           </div>
           <p id="guidanceText" class="text-xs text-emerald-900 leading-relaxed pt-1">
-            We detected 2 bottles (~0.04 kg ≈ ₦5). About 50 bottles make 1 kg (₦120). Add 48 more bottles to reach 1 kg, or 148 more to reach the 3 kg home pickup minimum!
+            Detected 8 bottles (about 0.14–0.18 kg ≈ ₦19). Roughly 50 bottles make 1 kg (₦120). Add ~42 more bottles to reach 1 kg!
           </p>
         </div>
       </div>
 
-      <!-- Custom Nigerian Name Active-Learning Card -->
+      <!-- Selective Training Vault & Nigerian Alias Lookup Card -->
       <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-3">
         <div>
           <span class="text-[11px] font-extrabold uppercase tracking-wider text-amber-800 bg-amber-100 px-2.5 py-1 rounded-full">
-            3. Teach Local Nigerian Names (Active Learning)
+            3. Nigerian Alias Lookup & Selective Training Vault
           </span>
-          <h3 class="text-base font-extrabold text-slate-900 mt-2">What do people call this in your area?</h3>
+          <h3 class="text-base font-extrabold text-slate-900 mt-2">Confirm or Teach Local Nigerian Name</h3>
           <p class="text-xs text-slate-500">
-            Saves the custom Nigerian name + image + bounding boxes into SQLite for future YOLO training.
+            Saves to the alias lookup table immediately, and stores the un-squashed photo + normalized YOLO <code>.txt</code> labels in <code>training_vault/</code> for future fine-tuning.
           </p>
         </div>
 
@@ -217,16 +224,21 @@
             </select>
           </div>
           <div>
-            <label class="block text-xs font-bold text-slate-700 mb-1">How Many Items in Photo?</label>
-            <input id="countInput" type="number" min="1" value="2" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs" />
+            <label class="block text-xs font-bold text-slate-700 mb-1">Counted Items</label>
+            <input id="countInput" type="number" min="1" value="8" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs" />
           </div>
         </div>
+
+        <label class="flex items-center gap-2 text-xs text-slate-600 cursor-pointer pt-1">
+          <input id="consentCheck" type="checkbox" checked class="rounded text-emerald-700" />
+          <span>I consent to storing this photo & bounding boxes in the training vault for future model fine-tuning.</span>
+        </label>
 
         <button
           onclick="saveCustomLabel()"
           class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs py-2.5 rounded-lg transition"
         >
-          💾 Save Custom Nigerian Name & Recalculate
+          💾 Confirm Label & Save to Training Vault
         </button>
         <div id="saveToast" class="hidden text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-lg p-2.5"></div>
       </div>
@@ -234,7 +246,7 @@
       <!-- Learned Nigerian Names Dictionary Table -->
       <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
         <div class="flex items-center justify-between mb-3">
-          <h3 class="text-sm font-extrabold text-slate-900">Learned Nigerian Names Dictionary (SQLite)</h3>
+          <h3 class="text-sm font-extrabold text-slate-900">Nigerian Alias Lookup Table (SQLite)</h3>
           <button onclick="loadAliases()" class="text-xs text-emerald-700 font-bold">↻ Refresh</button>
         </div>
         <div id="aliasesTable" class="space-y-1.5 max-h-48 overflow-y-auto text-xs"></div>
@@ -245,30 +257,45 @@
   <script>
     const canvas = document.getElementById('scanCanvas');
     const ctx = canvas.getContext('2d');
-    let lastSavedFilename = '';
+    let currentImageBase64 = '';
     let lastDetections = [];
     let webcamStream = null;
 
-    // 1. Check backend health
     async function checkHealth() {
       try {
         const res = await fetch('/api/health');
         const data = await res.json();
         const badge = document.getElementById('healthBadge');
-        if (data.onnx_loaded) {
-          badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-600"></span><span>ONNX Loaded · ${data.model_repo} (${data.classes_count} classes)</span>`;
+        if (data.instance_onnx_loaded && data.material_onnx_loaded) {
+          badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-600"></span><span>Paired ONNX Active · Instance (7 cls) + Material/Cans (8 cls)</span>`;
+        } else if (data.instance_onnx_loaded) {
+          badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-600"></span><span>Instance ONNX Active (${data.classes_count} classes)</span>`;
         } else {
-          badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500"></span><span>Heuristic Mode (run download_and_export_onnx.py)</span>`;
+          badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500"></span><span>Run download_and_export_onnx.py</span>`;
         }
       } catch (e) {
         console.error(e);
       }
     }
 
-    // 2. Render Valuation UI
-    function updateValuationUI(val, detections = [], infMs = null) {
+    function updateValuationUI(val, detections = [], infMs = null, emptyMsg = null) {
       if (infMs !== null) document.getElementById('infSpeed').textContent = `${infMs} ms`;
-      document.getElementById('detCountBadge').textContent = `${detections.length || val.detected_count} items`;
+      const emptyBox = document.getElementById('emptyAlertBox');
+
+      if (!val) {
+        emptyBox.classList.remove('hidden');
+        document.getElementById('emptyAlertMsg').textContent =
+          emptyMsg || 'No recyclables detected. Try a closer, well-lit photo or enter items manually.';
+        document.getElementById('detCountBadge').textContent = '0 items';
+        document.getElementById('breakdownList').innerHTML = '';
+        document.getElementById('detectionsList').innerHTML =
+          '<div class="text-amber-700 font-semibold">0 detections returned by model.</div>';
+        return;
+      }
+
+      emptyBox.classList.add('hidden');
+      const totalItems = val.total_combined_count || detections.length || val.detected_count;
+      document.getElementById('detCountBadge').textContent = `${totalItems} items`;
 
       document.getElementById('matTitle').textContent = val.custom_nigerian_name
         ? `${val.custom_nigerian_name} (${val.material_name})`
@@ -278,72 +305,105 @@
 
       document.getElementById('countVal').textContent = `${val.detected_count} ${val.unit_label}`;
       document.getElementById('unitGrams').textContent = `~${val.unit_weight_grams}g each`;
-      document.getElementById('weightVal').textContent = `${val.estimated_weight_kg} kg`;
+
+      const rng = val.estimated_weight_range_kg || [val.estimated_weight_kg, val.estimated_weight_kg];
+      document.getElementById('weightVal').textContent =
+        rng[0] === rng[1] ? `${val.estimated_weight_kg} kg` : `${rng[0]}–${rng[1]} kg`;
       document.getElementById('unitsPerKgNote').textContent = `${val.units_per_1kg} ${val.unit_label} = 1 kg`;
-      document.getElementById('payoutVal').textContent = `₦${val.estimated_payout_naira.toLocaleString()}`;
+
+      const dispNaira = val.total_combined_payout_naira !== undefined
+        ? val.total_combined_payout_naira
+        : val.estimated_payout_naira;
+      document.getElementById('payoutVal').textContent = `₦${dispNaira.toLocaleString()}`;
       document.getElementById('oneKgValueNote').textContent = `1 kg = ₦${val.price_for_1kg_naira}`;
 
       const pct = Math.min(100, Math.round((val.detected_count / val.units_per_1kg) * 100));
       document.getElementById('progRatio').textContent = `${val.detected_count} / ${val.units_per_1kg} ${val.unit_label}`;
       document.getElementById('progPct').textContent = `${pct}%`;
-      document.getElementById('progBar').style.width = `${Math.max(4, pct)}%`;
+      document.getElementById('progBar').style.width = `${Math.max(3, pct)}%`;
       document.getElementById('guidanceText').textContent = val.guidance_message;
 
       document.getElementById('bucketSelect').value = val.bucket_id;
       document.getElementById('countInput').value = val.detected_count;
 
-      // Render bounding boxes on canvas
+      // Per-material breakdown pills (for mixed photos like bottles + cans)
+      const breakdown = val.items_breakdown || [];
+      if (breakdown.length > 0) {
+        document.getElementById('breakdownList').innerHTML = breakdown
+          .map(
+            (b) =>
+              `<div class="flex justify-between items-center bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-lg">
+                <span class="font-bold text-emerald-950">${b.material_name}: ${b.detected_count} ${b.unit_label}</span>
+                <span class="font-extrabold text-emerald-800">~${b.estimated_weight_kg} kg · ₦${b.estimated_payout_naira}</span>
+              </div>`
+          )
+          .join('');
+      }
+
+      // Draw bounding boxes using original un-squashed coordinates (`box_orig`)
       if (detections && detections.length > 0) {
-        ctx.lineWidth = 3;
-        ctx.font = 'bold 14px Inter, sans-serif';
+        const scaleX = Math.max(1, canvas.width / 640);
+        ctx.lineWidth = Math.round(3 * scaleX);
+        const fontSize = Math.round(13 * scaleX);
+        ctx.font = `bold ${fontSize}px Inter, sans-serif`;
+
         detections.forEach((d) => {
-          const [x1, y1, x2, y2] = d.box_640;
-          ctx.strokeStyle = '#16A34A';
+          const [x1, y1, x2, y2] = d.box_orig || d.box_640;
+          const isCanOrGlass = d.bucket_id === 'cans' || d.bucket_id === 'glass';
+          const color = isCanOrGlass ? '#0284C7' : '#16A34A';
+          ctx.strokeStyle = color;
           ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
           const label = `${d.raw_class_name} (${Math.round(d.confidence * 100)}%)`;
-          const textWidth = ctx.measureText(label).width;
-          ctx.fillStyle = '#16A34A';
-          ctx.fillRect(x1, Math.max(0, y1 - 22), textWidth + 12, 22);
+          const textW = ctx.measureText(label).width;
+          const boxH = fontSize + 10;
+          ctx.fillStyle = color;
+          ctx.fillRect(x1, Math.max(0, y1 - boxH), textW + 12, boxH);
           ctx.fillStyle = '#FFFFFF';
-          ctx.fillText(label, x1 + 6, Math.max(15, y1 - 6));
+          ctx.fillText(label, x1 + 6, Math.max(fontSize, y1 - 5));
         });
 
         document.getElementById('detectionsList').innerHTML = detections
           .map(
             (d, i) =>
               `<div class="flex justify-between items-center bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
-                <span><strong>#${i + 1} ${d.raw_class_name}</strong> → mapped to <code class="text-emerald-700 font-bold">${d.bucket_id.toUpperCase()}</code></span>
-                <span class="font-bold text-emerald-700">${Math.round(d.confidence * 100)}% conf</span>
+                <span><strong>#${i + 1} ${d.raw_class_name}</strong> → <code class="text-emerald-700 font-bold uppercase">${d.bucket_id}</code> <span class="text-slate-400">(${d.model_source || 'onnx'})</span></span>
+                <span class="font-bold text-emerald-700">${Math.round(d.confidence * 100)}%</span>
               </div>`
           )
           .join('');
       } else {
         document.getElementById('detectionsList').innerHTML =
-          `<div class="text-slate-500">Counted <strong>${val.detected_count} ${val.unit_label}</strong> in category <strong>${val.material_name}</strong>.</div>`;
+          `<div class="text-slate-500">Simulated <strong>${val.detected_count} ${val.unit_label}</strong> in category <strong>${val.material_name}</strong>.</div>`;
       }
     }
 
-    // 3. Process uploaded or snapped image -> 640x640 JPEG -> POST /api/scan
+    // Preserves aspect ratio up to 1024px max side before sending to Python letterbox pipeline
     function processImageSource(imgElement) {
       document.getElementById('canvasPlaceholder').classList.add('hidden');
-      ctx.clearRect(0, 0, 640, 640);
-      ctx.drawImage(imgElement, 0, 0, 640, 640);
+      const srcW = imgElement.videoWidth || imgElement.naturalWidth || 640;
+      const srcH = imgElement.videoHeight || imgElement.naturalHeight || 640;
+      const maxDim = 1024;
+      const scale = Math.min(1, maxDim / Math.max(srcW, srcH));
+      canvas.width = Math.round(srcW * scale);
+      canvas.height = Math.round(srcH * scale);
 
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
-      const sizeKb = Math.round((dataUrl.length * 3) / 4 / 1024);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(imgElement, 0, 0, canvas.width, canvas.height);
+
+      currentImageBase64 = canvas.toDataURL('image/jpeg', 0.80);
+      const sizeKb = Math.round((currentImageBase64.length * 3) / 4 / 1024);
       document.getElementById('imgSize').textContent = `${sizeKb} KB`;
 
       fetch('/api/scan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image_base64: dataUrl, fallback_bucket: 'pet', fallback_count: 2 }),
+        body: JSON.stringify({ image_base64: currentImageBase64 }),
       })
         .then((r) => r.json())
         .then((res) => {
           if (res.success) {
-            lastSavedFilename = res.saved_image || '';
             lastDetections = res.detections || [];
-            updateValuationUI(res.valuation, res.detections, res.inference_time_ms);
+            updateValuationUI(res.valuation, res.detections, res.inference_time_ms, res.message);
           }
         });
     }
@@ -356,7 +416,6 @@
       img.src = URL.createObjectURL(file);
     });
 
-    // 4. Webcam handlers
     document.getElementById('cameraBtn').addEventListener('click', async () => {
       try {
         webcamStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
@@ -380,12 +439,11 @@
       document.getElementById('webcamBox').classList.add('hidden');
     });
 
-    // 5. Quick simulator without image
     async function simulateScan(bucket, count) {
       const res = await fetch('/api/scan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fallback_bucket: bucket, fallback_count: count }),
+        body: JSON.stringify({ is_simulation: true, fallback_bucket: bucket, fallback_count: count }),
       });
       const data = await res.json();
       if (data.success) {
@@ -400,7 +458,6 @@
       simulateScan(b, nextCount);
     }
 
-    // 6. Active learning: Fill & Save Custom Nigerian Name
     function fillAlias(name, bucket) {
       document.getElementById('customNameInput').value = name;
       document.getElementById('bucketSelect').value = bucket;
@@ -409,7 +466,8 @@
     async function saveCustomLabel() {
       const customName = document.getElementById('customNameInput').value.trim();
       const bucketId = document.getElementById('bucketSelect').value;
-      const itemCount = parseInt(document.getElementById('countInput').value || '2', 10);
+      const itemCount = parseInt(document.getElementById('countInput').value || '1', 10);
+      const userConsent = document.getElementById('consentCheck').checked;
 
       const res = await fetch('/api/scan/custom-label', {
         method: 'POST',
@@ -418,7 +476,8 @@
           custom_name: customName,
           bucket_id: bucketId,
           item_count: itemCount,
-          image_filename: lastSavedFilename,
+          user_consent: userConsent,
+          image_base64: userConsent ? currentImageBase64 : '',
           detections: lastDetections,
         }),
       });
@@ -428,7 +487,7 @@
         const toast = document.getElementById('saveToast');
         toast.textContent = `✓ ${data.message}`;
         toast.classList.remove('hidden');
-        setTimeout(() => toast.classList.add('hidden'), 4000);
+        setTimeout(() => toast.classList.add('hidden'), 4500);
         loadAliases();
       }
     }

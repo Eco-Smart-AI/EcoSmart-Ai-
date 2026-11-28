@@ -1,16 +1,28 @@
 """
-EcoSmart AI — Lightweight PythonAnywhere Flask + ONNX Runtime Backend
-=====================================================================
-- Designed specifically for PythonAnywhere WSGI workers (1 CPU thread, <80 MB RAM).
-- Uses `arnabdhar/YOLOv8-nano-trash-detection` exported to `models/ecosmart_waste.onnx`.
-- Counts individual waste items (bottles, cans, cartons, sachets), calculates:
-    1. Estimated weight in kg (e.g., 1 bottle = 20g = 0.02 kg)
-    2. How many units make 1 kg (e.g., 50 PET bottles = 1 kg)
-    3. How many more units the user needs to reach 1 kg & 3 kg pickup minimum
-    4. Estimated Naira value based on Kubwa / Abuja pilot market rates
-- Stores user-supplied Custom Nigerian Names + 640x640 images into SQLite + `training_vault/`
-  so the machine learns local Nigerian vocabulary ("Pure water nylon", "Eva rubber", "Gongon")
-  immediately and banks labeled data for future YOLO fine-tuning.
+EcoSmart AI — Hardened PythonAnywhere Flask + Paired ONNX Runtime Backend
+=========================================================================
+Implements all 8 production computer-vision & PythonAnywhere hardening rules:
+  1. Aspect-Ratio Letterbox Preprocessing (`ImageOps.exif_transpose` + `(114,114,114)` pad)
+     and coordinate mapping back to the original un-squashed image dimensions.
+  2. Per-Class Non-Maximum Suppression (`offset = class_ids[:, None] * 4096`, capped at 100).
+  3. Embedded ONNX Metadata Class Reading (`session.get_modelmeta().custom_metadata_map["names"]`)
+     + Explicit `CLASS_TO_BUCKET` dictionary (no fragile substring guessing).
+  4. Sequential Paired Models:
+       - Model A (`ecosmart_waste.onnx` — `muaaaa29/Plastic-Waste-Detection-YOLOv8`):
+         Counts individual bottles, HDPE containers, sachets/films, and UHT cartons.
+       - Model B (`ecosmart_material.onnx` — `HrutikAdsare/waste-detection-yolov8`):
+         Detects `metal` (Aluminium cans), `cardboard`, `paper`, `glass`, and overrides
+         Model A when cylindrical Aluminium Cans are mistaken for plastic bottles.
+  5. Honest Empty Results: Never fabricates detections when a real photo has 0 detections
+     (only explicit `is_simulation: true` requests run the math simulator).
+  6. Multi-Material Mixed Valuation: Values every material bucket present in a photo
+     (e.g., 10 bottles + 6 cans together) and outputs weight ranges (`0.85x–1.15x`).
+  7. Hardened Image Intake (`MAX_CONTENT_LENGTH = 8 MB`, `MAX_IMAGE_PIXELS = 40M`, `img.draft`,
+     and HTTP 400 on corrupt uploads).
+  8. Selective Training Vault Saving: Only saves to `training_vault/` when the user confirms
+     or corrects a label in `/api/scan/custom-label` (with `uuid4()` filenames, un-squashed
+     aspect ratio up to 1280px, and normalized YOLO `.txt` label files `class cx cy w h`),
+     plus `/api/scan/verify-scale-weight` to record recyclers' physical scale weights.
 """
 
 import os
@@ -22,19 +34,21 @@ os.environ["MKL_NUM_THREADS"] = "1"
 os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
 os.environ["NUMEXPR_NUM_THREADS"] = "1"
 
+import ast
 import base64
 import io
 import json
 import sqlite3
 import time
-from datetime import datetime
+import uuid
+from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 from flask import Flask, jsonify, render_template, request
 from flask_cors import CORS
-from PIL import Image
+from PIL import Image, ImageOps, UnidentifiedImageError
 
 try:
     import onnxruntime as ort
@@ -49,15 +63,31 @@ DB_PATH = BASE_DIR / "ecosmart.db"
 MODELS_DIR.mkdir(parents=True, exist_ok=True)
 VAULT_DIR.mkdir(parents=True, exist_ok=True)
 
-ONNX_MODEL_PATH = MODELS_DIR / "ecosmart_waste.onnx"
-CLASSES_JSON_PATH = MODELS_DIR / "classes.json"
+INSTANCE_ONNX_PATH = MODELS_DIR / "ecosmart_waste.onnx"
+INSTANCE_CLASSES_PATH = MODELS_DIR / "classes.json"
+
+MATERIAL_ONNX_PATH = MODELS_DIR / "ecosmart_material.onnx"
+MATERIAL_CLASSES_PATH = MODELS_DIR / "material_classes.json"
+
+# Hardened image intake limits for PythonAnywhere RAM protection
+Image.MAX_IMAGE_PIXELS = 40_000_000
 
 app = Flask(__name__)
+app.config["MAX_CONTENT_LENGTH"] = 8 * 1024 * 1024  # Reject uploads > 8 MB
 CORS(app)
 
 # ============================================================================
-# 1. NIGERIAN WASTE HEURISTIC TABLE (Unit Weight + Units per 1 kg + Kubwa Price)
+# 1. NIGERIAN WASTE BUCKETS & EXPLICIT CLASS-TO-BUCKET DICTIONARY
 # ============================================================================
+BUCKET_INDEX_FOR_YOLO_TXT = {
+    "pet": 0,
+    "hdpe": 1,
+    "cans": 2,
+    "carton": 3,
+    "glass": 4,
+    "sachet": 5,
+}
+
 NIGERIAN_MATERIAL_BUCKETS: Dict[str, Dict[str, Any]] = {
     "pet": {
         "id": "pet",
@@ -65,7 +95,7 @@ NIGERIAN_MATERIAL_BUCKETS: Dict[str, Dict[str, Any]] = {
         "local_examples": "Eva, Coke, Pepsi, Bigi, Cway water & soda bottles",
         "unit_name_singular": "bottle",
         "unit_name_plural": "bottles",
-        "avg_unit_weight_kg": 0.020,  # 20 grams per standard 50cl-60cl bottle
+        "avg_unit_weight_kg": 0.020,  # 20g per standard bottle
         "units_per_1kg": 50,         # 50 bottles = 1 kg
         "default_rate_naira": 120,
         "min_rate_naira": 80,
@@ -77,7 +107,7 @@ NIGERIAN_MATERIAL_BUCKETS: Dict[str, Dict[str, Any]] = {
         "local_examples": "Hypo jugs, detergent containers, rub, bottle caps",
         "unit_name_singular": "container",
         "unit_name_plural": "containers",
-        "avg_unit_weight_kg": 0.060,  # 60 grams per container
+        "avg_unit_weight_kg": 0.060,  # 60g per container
         "units_per_1kg": 17,         # ~17 containers = 1 kg
         "default_rate_naira": 105,
         "min_rate_naira": 90,
@@ -85,11 +115,11 @@ NIGERIAN_MATERIAL_BUCKETS: Dict[str, Dict[str, Any]] = {
     },
     "cans": {
         "id": "cans",
-        "name": "Aluminium Cans",
+        "name": "Aluminium Cans & Metal",
         "local_examples": "Maltina, Amstel, Coke, Fearless, Predator cans (Gongon)",
         "unit_name_singular": "can",
         "unit_name_plural": "cans",
-        "avg_unit_weight_kg": 0.015,  # 15 grams per 33cl can
+        "avg_unit_weight_kg": 0.015,  # 15g per 33cl can
         "units_per_1kg": 67,         # ~67 cans = 1 kg
         "default_rate_naira": 600,
         "min_rate_naira": 500,
@@ -98,10 +128,10 @@ NIGERIAN_MATERIAL_BUCKETS: Dict[str, Dict[str, Any]] = {
     "carton": {
         "id": "carton",
         "name": "Cardboard & Paper Cartons",
-        "local_examples": "Indomie cartons, brown delivery boxes, office paper",
+        "local_examples": "Indomie cartons, brown boxes, UHT juice/milk cartons, office paper",
         "unit_name_singular": "carton",
         "unit_name_plural": "cartons",
-        "avg_unit_weight_kg": 0.125,  # 125 grams per flattened medium carton
+        "avg_unit_weight_kg": 0.125,  # 125g per medium carton
         "units_per_1kg": 8,          # ~8 cartons = 1 kg
         "default_rate_naira": 60,
         "min_rate_naira": 40,
@@ -110,10 +140,10 @@ NIGERIAN_MATERIAL_BUCKETS: Dict[str, Dict[str, Any]] = {
     "glass": {
         "id": "glass",
         "name": "Glass Bottles & Jars",
-        "local_examples": "Glass drink bottles, jars",
+        "local_examples": "Beverage glass bottles, jars",
         "unit_name_singular": "glass bottle",
         "unit_name_plural": "glass bottles",
-        "avg_unit_weight_kg": 0.250,  # 250 grams per glass bottle
+        "avg_unit_weight_kg": 0.250,  # 250g per glass bottle
         "units_per_1kg": 4,          # 4 glass bottles = 1 kg
         "default_rate_naira": 30,
         "min_rate_naira": 20,
@@ -121,11 +151,11 @@ NIGERIAN_MATERIAL_BUCKETS: Dict[str, Dict[str, Any]] = {
     },
     "sachet": {
         "id": "sachet",
-        "name": "Pure Water Sachets / LDPE Nylon",
-        "local_examples": "Pure water leather, sachet bags, clean packaging nylon",
+        "name": "Pure Water Sachets / Nylon (LDPE)",
+        "local_examples": "Pure water leather, sachet bags, packaging film & wrappers",
         "unit_name_singular": "sachet",
         "unit_name_plural": "sachets",
-        "avg_unit_weight_kg": 0.003,  # 3 grams per empty sachet
+        "avg_unit_weight_kg": 0.003,  # 3g per empty sachet/wrapper
         "units_per_1kg": 333,        # ~333 sachets = 1 kg
         "default_rate_naira": 50,
         "min_rate_naira": 30,
@@ -133,44 +163,65 @@ NIGERIAN_MATERIAL_BUCKETS: Dict[str, Dict[str, Any]] = {
     },
 }
 
+# Explicit class dictionary — NO fragile substring matching, NO silent fallback to "pet"
+CLASS_TO_BUCKET: Dict[str, Optional[str]] = {
+    # Model A: muaaaa29/Plastic-Waste-Detection-YOLOv8 (7 classes)
+    "pet bottle": "pet",
+    "hdpe plastic": "hdpe",
+    "single-layer plastic": "sachet",
+    "multi-layer plastic": "sachet",
+    "single-use-plastic": "sachet",
+    "squeeze-tube": "sachet",
+    "uht-box": "carton",
+    # Model B: HrutikAdsare/waste-detection-yolov8 & TrashNet/TACO classes
+    "metal": "cans",
+    "can": "cans",
+    "aluminium": "cans",
+    "cardboard": "carton",
+    "carton": "carton",
+    "paper": "carton",
+    "glass": "glass",
+    "glass bottle": "glass",
+    "brown-glass": "glass",
+    "green-glass": "glass",
+    "white-glass": "glass",
+    "plastic": "pet",
+    "plasticbottle": "pet",
+    "bottle": "pet",
+    "bottle cap": "hdpe",
+    "cup": "hdpe",
+    "other plastic": "hdpe",
+    "plastic bag & wrapper": "sachet",
+    # Non-recyclable or uncollected classes explicitly mapped to None (ignored in payout)
+    "aluminium foil": None,
+    "broken glass": None,
+    "e-waste": None,
+    "battery": None,
+    "medical": None,
+    "organic": None,
+    "biological": None,
+    "clothes": None,
+    "shoes": None,
+    "trash": None,
+}
 
-def map_yolo_class_to_bucket(raw_label: str) -> str:
-    """
-    Maps any class label from `muaaaa29/Plastic-Waste-Detection-YOLOv8` or TACO/TrashNet
-    to EcoSmart AI's Nigerian material bucket:
-      - 'PET Bottle' -> 'pet'
-      - 'HDPE Plastic' -> 'hdpe'
-      - 'Single-layer Plastic' / 'Multi-layer Plastic' / 'Single-Use-Plastic' / 'Squeeze-Tube' -> 'sachet'
-      - 'UHT-Box' / 'Carton' / 'Cardboard' -> 'carton'
-      - 'Can' / 'Metal' -> 'cans'
-      - 'Glass' -> 'glass'
-    """
-    lbl = raw_label.lower()
-    if "hdpe" in lbl or any(k in lbl for k in ["cap", "lid", "tub", "container", "gallon"]):
-        return "hdpe"
-    if "pet" in lbl or "bottle" in lbl:
-        if "glass" in lbl:
-            return "glass"
-        return "pet"
-    if any(k in lbl for k in ["uht", "box", "carton", "cardboard", "paper"]):
-        return "carton"
-    if any(k in lbl for k in ["single-layer", "multi-layer", "single-use", "bag", "wrapper", "film", "sachet", "pouch", "tube"]):
-        return "sachet"
-    if any(k in lbl for k in ["can", "metal", "aluminium", "aluminum", "foil", "tin"]):
-        return "cans"
-    if "glass" in lbl:
-        return "glass"
-    return "pet"
+
+def map_yolo_class_to_bucket(raw_label: str) -> Optional[str]:
+    """Explicit lookup: returns bucket_id or None if unknown/uncollected."""
+    return CLASS_TO_BUCKET.get(raw_label.strip().lower(), None)
 
 
 # ============================================================================
-# 2. SQLITE DATABASE FOR ACTIVE LEARNING (CUSTOM NIGERIAN NAMES) & MARKET RATES
+# 2. SQLITE DATABASE (MARKET RATES, NIGERIAN ALIAS LOOKUP, TRAINING VAULT)
 # ============================================================================
+def now_utc_iso() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
 def init_db():
     conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
 
-    # 1. Market rates table (synced with Admin Portal -> Market rates)
     cur.execute(
         """
         CREATE TABLE IF NOT EXISTS market_rates (
@@ -193,11 +244,10 @@ def init_db():
                 info["min_rate_naira"],
                 info["max_rate_naira"],
                 info["default_rate_naira"],
-                datetime.utcnow().isoformat(),
+                now_utc_iso(),
             ),
         )
 
-    # 2. Learned Nigerian custom names / aliases table
     cur.execute(
         """
         CREATE TABLE IF NOT EXISTS nigerian_material_aliases (
@@ -210,7 +260,6 @@ def init_db():
         """
     )
 
-    # Pre-seed common Nigerian local names so Day 1 already feels smart
     starter_aliases = [
         ("Pure water nylon", "sachet", 14),
         ("Pure water leather", "sachet", 9),
@@ -227,26 +276,27 @@ def init_db():
             INSERT OR IGNORE INTO nigerian_material_aliases (custom_name, bucket_id, usage_count, created_at)
             VALUES (?, ?, ?, ?)
             """,
-            (cname, bid, cnt, datetime.utcnow().isoformat()),
+            (cname, bid, cnt, now_utc_iso()),
         )
 
-    # 3. Training Vault samples table (stores image path + YOLO boxes + user custom name + verified weight)
     cur.execute(
         """
         CREATE TABLE IF NOT EXISTS training_vault_samples (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            sample_uuid TEXT UNIQUE,
             image_filename TEXT,
+            yolo_txt_filename TEXT,
             yolo_raw_detections TEXT,
             user_custom_name TEXT,
             bucket_id TEXT,
             estimated_count INTEGER,
             estimated_weight_kg REAL,
             verified_scale_weight_kg REAL,
+            user_consent INTEGER DEFAULT 1,
             created_at TEXT
         )
         """
     )
-
     conn.commit()
     conn.close()
 
@@ -255,70 +305,105 @@ init_db()
 
 
 # ============================================================================
-# 3. GLOBAL ONNX MODEL LOADER (1 CPU THREAD FOR PYTHONANYWHERE)
+# 3.PAIRED ONNX MODEL LOADERS (READS EMBEDDED METADATA NAMES DIRECTLY)
 # ============================================================================
-ONNX_SESSION = None
-MODEL_CLASSES: Dict[str, str] = {
-    "0": "Aluminium foil",
-    "1": "Bottle",
-    "2": "Bottle cap",
-    "3": "Broken glass",
-    "4": "Can",
-    "5": "Carton",
-    "6": "Cup",
-    "7": "Glass bottle",
-    "8": "Other plastic",
-    "9": "Paper",
-    "10": "Plastic bag & wrapper",
-    "11": "Plasticbottle",
-}
+INSTANCE_SESSION = None
+INSTANCE_CLASSES: Dict[str, str] = {}
+
+MATERIAL_SESSION = None
+MATERIAL_CLASSES: Dict[str, str] = {}
 
 
-def load_onnx_model():
-    global ONNX_SESSION, MODEL_CLASSES
-    if CLASSES_JSON_PATH.exists():
+def extract_onnx_class_names(session: Any, fallback_json_path: Path) -> Dict[str, str]:
+    """Reads Ultralytics class names directly from the ONNX file's custom_metadata_map."""
+    try:
+        meta = session.get_modelmeta().custom_metadata_map
+        if "names" in meta:
+            parsed = ast.literal_eval(meta["names"])
+            if isinstance(parsed, dict):
+                return {str(k): str(v) for k, v in parsed.items()}
+    except Exception as err:
+        print(f"[!] Could not parse embedded ONNX metadata names: {err}")
+
+    if fallback_json_path.exists():
         try:
-            with open(CLASSES_JSON_PATH, "r", encoding="utf-8") as f:
-                MODEL_CLASSES = json.load(f)
+            with open(fallback_json_path, "r", encoding="utf-8") as f:
+                return json.load(f)
         except Exception:
             pass
+    return {}
 
+
+def create_single_thread_session(onnx_path: Path) -> Any:
+    sess_options = ort.SessionOptions()
+    sess_options.intra_op_num_threads = 1
+    sess_options.inter_op_num_threads = 1
+    sess_options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_BASIC
+    return ort.InferenceSession(
+        str(onnx_path),
+        sess_options=sess_options,
+        providers=["CPUExecutionProvider"],
+    )
+
+
+def load_paired_onnx_models():
+    global INSTANCE_SESSION, INSTANCE_CLASSES, MATERIAL_SESSION, MATERIAL_CLASSES
     if ort is None:
-        print("[!] onnxruntime not installed yet. Running in heuristic fallback mode.")
+        print("[!] onnxruntime not installed.")
         return
 
-    if ONNX_MODEL_PATH.exists():
-        sess_options = ort.SessionOptions()
-        sess_options.intra_op_num_threads = 1
-        sess_options.inter_op_num_threads = 1
-        sess_options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_BASIC
-        ONNX_SESSION = ort.InferenceSession(
-            str(ONNX_MODEL_PATH),
-            sess_options=sess_options,
-            providers=["CPUExecutionProvider"],
-        )
-        print(f"[✓] Loaded ONNX model: {ONNX_MODEL_PATH}")
-    else:
-        print(f"[!] {ONNX_MODEL_PATH} not found yet. Run `python backend/download_and_export_onnx.py` first.")
+    if INSTANCE_ONNX_PATH.exists():
+        INSTANCE_SESSION = create_single_thread_session(INSTANCE_ONNX_PATH)
+        INSTANCE_CLASSES = extract_onnx_class_names(INSTANCE_SESSION, INSTANCE_CLASSES_PATH)
+        print(f"[✓] Loaded Model A (Instance Detector): {INSTANCE_ONNX_PATH.name} -> {INSTANCE_CLASSES}")
+
+    if MATERIAL_ONNX_PATH.exists():
+        MATERIAL_SESSION = create_single_thread_session(MATERIAL_ONNX_PATH)
+        MATERIAL_CLASSES = extract_onnx_class_names(MATERIAL_SESSION, MATERIAL_CLASSES_PATH)
+        print(f"[✓] Loaded Model B (Material/Can Verifier): {MATERIAL_ONNX_PATH.name} -> {MATERIAL_CLASSES}")
 
 
-load_onnx_model()
+load_paired_onnx_models()
 
 
 # ============================================================================
-# 4. PURE NUMPY YOLOv8 640x640 PREPROCESS + POSTPROCESS (NMS)
+# 4. LETTERBOX PREPROCESSING + PER-CLASS NMS + SEQUENTIAL PAIRED INFERENCE
 # ============================================================================
-def preprocess_image(pil_img: Image.Image) -> Tuple[np.ndarray, Image.Image]:
-    """Resizes image to 640x640 RGB and converts to [1, 3, 640, 640] float32 array."""
-    img_rgb = pil_img.convert("RGB").resize((640, 640), Image.Resampling.BILINEAR)
-    arr = np.array(img_rgb, dtype=np.float32) / 255.0
-    arr = np.transpose(arr, (2, 0, 1))  # HWC -> CHW
-    arr = np.expand_dims(arr, axis=0)   # [1, 3, 640, 640]
-    return arr, img_rgb
+def load_image_safely(fileobj: Any) -> Image.Image:
+    """Hardened image loader: fixes EXIF orientation and limits decoding memory."""
+    img = Image.open(fileobj)
+    try:
+        img.draft("RGB", (1280, 1280))
+    except Exception:
+        pass
+    img = ImageOps.exif_transpose(img).convert("RGB")
+    return img
+
+
+def preprocess_image_letterbox(
+    pil_img: Image.Image, size: int = 640
+) -> Tuple[np.ndarray, Dict[str, float], Image.Image]:
+    """
+    Preserves aspect ratio using YOLO standard (114, 114, 114) letterbox padding
+    instead of squashing the image. Returns input tensor, letterbox metadata, and RGB image.
+    """
+    img = ImageOps.exif_transpose(pil_img).convert("RGB")
+    w, h = img.size
+    r = min(size / w, size / h)
+    nw, nh = round(w * r), round(h * r)
+    px, py = (size - nw) // 2, (size - nh) // 2
+
+    canvas = Image.new("RGB", (size, size), (114, 114, 114))
+    canvas.paste(img.resize((nw, nh), Image.Resampling.BILINEAR), (px, py))
+
+    arr = np.asarray(canvas, dtype=np.float32) / 255.0
+    arr = arr.transpose(2, 0, 1)[None]  # [1, 3, 640, 640]
+    meta = {"r": r, "px": px, "py": py, "orig_w": w, "orig_h": h, "size": size}
+    return arr, meta, img
 
 
 def numpy_nms(boxes: np.ndarray, scores: np.ndarray, iou_threshold: float = 0.45) -> List[int]:
-    """Pure NumPy Non-Maximum Suppression (zero OpenCV/PyTorch needed on PythonAnywhere)."""
+    """Pure NumPy Non-Maximum Suppression."""
     if len(boxes) == 0:
         return []
     x1 = boxes[:, 0]
@@ -348,17 +433,25 @@ def numpy_nms(boxes: np.ndarray, scores: np.ndarray, iou_threshold: float = 0.45
     return keep
 
 
-def run_yolo_onnx(pil_img: Image.Image, conf_thres: float = 0.28) -> List[Dict[str, Any]]:
-    """Runs YOLOv8 ONNX inference and returns list of detected items with boxes & classes."""
-    if ONNX_SESSION is None:
+def run_single_session(
+    session: Any,
+    class_map: Dict[str, str],
+    input_tensor: np.ndarray,
+    meta: Dict[str, float],
+    conf_thres: float = 0.25,
+    source_tag: str = "instance",
+) -> List[Dict[str, Any]]:
+    """
+    Runs one ONNX session with per-class NMS (`offset = class_ids[:, None] * 4096`),
+    caps at 100 detections, and maps coordinates back to original image dimensions.
+    """
+    if session is None:
         return []
 
-    input_tensor, _ = preprocess_image(pil_img)
-    input_name = ONNX_SESSION.get_inputs()[0].name
-    outputs = ONNX_SESSION.run(None, {input_name: input_tensor})
+    input_name = session.get_inputs()[0].name
+    outputs = session.run(None, {input_name: input_tensor})
 
-    # YOLOv8 output shape is [1, 4 + num_classes, 8400]
-    preds = np.squeeze(outputs[0])  # [4 + num_classes, 8400]
+    preds = np.squeeze(outputs[0])
     if preds.shape[0] < preds.shape[1]:
         preds = preds.T  # [8400, 4 + num_classes]
 
@@ -375,33 +468,155 @@ def run_yolo_onnx(pil_img: Image.Image, conf_thres: float = 0.28) -> List[Dict[s
     if len(boxes_xywh) == 0:
         return []
 
-    # Convert xywh -> x1y1x2y2
     boxes_xyxy = np.zeros_like(boxes_xywh)
     boxes_xyxy[:, 0] = boxes_xywh[:, 0] - boxes_xywh[:, 2] / 2
     boxes_xyxy[:, 1] = boxes_xywh[:, 1] - boxes_xywh[:, 3] / 2
     boxes_xyxy[:, 2] = boxes_xywh[:, 0] + boxes_xywh[:, 2] / 2
     boxes_xyxy[:, 3] = boxes_xywh[:, 1] + boxes_xywh[:, 3] / 2
 
-    keep_indices = numpy_nms(boxes_xyxy, max_scores, iou_threshold=0.45)
+    # Per-class NMS so e.g. a cap on a bottle does not suppress the bottle
+    offset = class_ids[:, None] * 4096.0
+    keep_indices = numpy_nms(boxes_xyxy + offset, max_scores, iou_threshold=0.45)[:100]
+
+    orig_w, orig_h = meta["orig_w"], meta["orig_h"]
+    px, py, r = meta["px"], meta["py"], meta["r"]
 
     detections: List[Dict[str, Any]] = []
     for idx in keep_indices:
         cid = str(int(class_ids[idx]))
-        raw_name = MODEL_CLASSES.get(cid, f"class_{cid}")
+        raw_name = class_map.get(cid, f"class_{cid}")
         bucket_id = map_yolo_class_to_bucket(raw_name)
+
+        # Skip uncollected / non-recyclable classes (None)
+        if bucket_id is None:
+            continue
+
+        lx1, ly1, lx2, ly2 = boxes_xyxy[idx].tolist()
+
+        # Map from 640x640 letterbox back to original image pixels
+        ox1 = float(np.clip((lx1 - px) / r, 0, orig_w))
+        oy1 = float(np.clip((ly1 - py) / r, 0, orig_h))
+        ox2 = float(np.clip((lx2 - px) / r, 0, orig_w))
+        oy2 = float(np.clip((ly2 - py) / r, 0, orig_h))
+
+        # Normalized YOLO format [cx, cy, w, h] in 0..1 relative to original image
+        bw = max(1.0, ox2 - ox1)
+        bh = max(1.0, oy2 - oy1)
+        norm_cx = round((ox1 + bw / 2.0) / orig_w, 5)
+        norm_cy = round((oy1 + bh / 2.0) / orig_h, 5)
+        norm_w = round(bw / orig_w, 5)
+        norm_h = round(bh / orig_h, 5)
+
         detections.append(
             {
                 "class_id": int(class_ids[idx]),
                 "raw_class_name": raw_name,
                 "bucket_id": bucket_id,
                 "confidence": round(float(max_scores[idx]), 3),
-                "box_640": [round(float(x), 1) for x in boxes_xyxy[idx].tolist()],
+                "box_orig": [round(ox1, 1), round(oy1, 1), round(ox2, 1), round(oy2, 1)],
+                "box_640": [round(lx1, 1), round(ly1, 1), round(lx2, 1), round(ly2, 1)],
+                "yolo_norm": [
+                    BUCKET_INDEX_FOR_YOLO_TXT.get(bucket_id, 0),
+                    norm_cx,
+                    norm_cy,
+                    norm_w,
+                    norm_h,
+                ],
+                "model_source": source_tag,
             }
         )
-
     return detections
 
 
+def box_iou_1d(box_a: List[float], box_b: List[float]) -> float:
+    x1 = max(box_a[0], box_b[0])
+    y1 = max(box_a[1], box_b[1])
+    x2 = min(box_a[2], box_b[2])
+    y2 = min(box_a[3], box_b[3])
+    inter = max(0.0, x2 - x1) * max(0.0, y2 - y1)
+    area_a = max(1.0, (box_a[2] - box_a[0]) * (box_a[3] - box_a[1]))
+    area_b = max(1.0, (box_b[2] - box_b[0]) * (box_b[3] - box_b[1]))
+    return inter / min(area_a, area_b)
+
+
+def run_paired_yolo_pipeline(
+    pil_img: Image.Image, conf_thres: float = 0.25
+) -> Tuple[List[Dict[str, Any]], Dict[str, float], Image.Image]:
+    """
+    Sequential Paired Pipeline:
+      1. Runs Model A (`INSTANCE_SESSION` — `muaaaa29/Plastic-Waste-Detection-YOLOv8`) to detect
+         and count individual items (`PET Bottle`, `HDPE Plastic`, `UHT-Box`, `Single-layer Plastic`).
+      2. Runs Model B (`MATERIAL_SESSION` — `HrutikAdsare/waste-detection-yolov8`) sequentially
+         to check for non-plastic materials (`metal`/cans, `cardboard`, `paper`, `glass`):
+         - If Model B detects `metal` (`cans`) or `glass` or `cardboard` overlapping Model A's
+           `"PET Bottle"` boxes (because Model A only knows plastic classes and mistakes
+           cylindrical aluminium cans for PET bottles), it re-labels those boxes with Model B's
+           material (`metal` -> `cans`, `glass` -> `glass`, `cardboard` -> `carton`) while
+           keeping Model A's exact individual item count!
+         - If Model A found 0 boxes (e.g. a photo of cans, cardboard, or glass that Model A
+           missed completely), Model B's detections are returned directly.
+    """
+    input_tensor, meta, img_rgb = preprocess_image_letterbox(pil_img, size=640)
+
+    dets_a = run_single_session(
+        INSTANCE_SESSION,
+        INSTANCE_CLASSES,
+        input_tensor,
+        meta,
+        conf_thres=conf_thres,
+        source_tag="instance_detector",
+    )
+
+    dets_b = run_single_session(
+        MATERIAL_SESSION,
+        MATERIAL_CLASSES,
+        input_tensor,
+        meta,
+        conf_thres=0.25,
+        source_tag="material_verifier",
+    )
+
+    if not dets_a:
+        return dets_b, meta, img_rgb
+
+    if dets_b:
+        # Check if Model B sees non-plastic materials (cans/metal, glass, cardboard)
+        # while NOT seeing high-confidence plastic
+        max_plastic_b = max(
+            (d["confidence"] for d in dets_b if d["bucket_id"] == "pet"), default=0.0
+        )
+        non_plastic_b = [
+            d for d in dets_b if d["bucket_id"] in ("cans", "glass", "carton")
+        ]
+
+        for da in dets_a:
+            if da["bucket_id"] == "pet":
+                for db in non_plastic_b:
+                    overlap = box_iou_1d(da["box_640"], db["box_640"])
+                    # Override "PET Bottle" -> "Aluminium Can / Glass / Carton" when Model B
+                    # strongly identifies the object as non-plastic
+                    if overlap > 0.25 and db["confidence"] >= max(0.38, max_plastic_b + 0.08):
+                        da["bucket_id"] = db["bucket_id"]
+                        da["raw_class_name"] = f"{db['raw_class_name']} (verified)"
+                        da["yolo_norm"][0] = BUCKET_INDEX_FOR_YOLO_TXT.get(db["bucket_id"], 0)
+                        da["model_source"] = "paired_instance+material"
+                        break
+
+        # Also append any distinct non-plastic items from Model B that don't overlap Model A
+        for db in non_plastic_b:
+            if db["confidence"] >= 0.45:
+                overlaps_any = any(
+                    box_iou_1d(da["box_640"], db["box_640"]) > 0.30 for da in dets_a
+                )
+                if not overlaps_any:
+                    dets_a.append(db)
+
+    return dets_a, meta, img_rgb
+
+
+# ============================================================================
+# 5. MULTI-MATERIAL VALUATION ENGINE (VALUES EVERY BUCKET + WEIGHT RANGES)
+# ============================================================================
 def get_live_rate_for_bucket(bucket_id: str) -> Dict[str, int]:
     conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
@@ -422,25 +637,20 @@ def get_live_rate_for_bucket(bucket_id: str) -> Dict[str, int]:
 
 
 def calculate_waste_valuation(bucket_id: str, item_count: int) -> Dict[str, Any]:
-    """
-    Given a material bucket (e.g. 'pet') and counted items (e.g. 2 bottles),
-    calculates:
-      - estimated weight in kg
-      - how many items make 1 kg
-      - how many more items are needed to reach 1 kg
-      - how many more items are needed for a 3 kg home pickup
-      - estimated Naira value
-    """
+    """Calculates weight, weight range (0.85x-1.15x), 1kg progress, and Naira valuation for one bucket."""
     bucket = NIGERIAN_MATERIAL_BUCKETS.get(bucket_id, NIGERIAN_MATERIAL_BUCKETS["pet"])
     rates = get_live_rate_for_bucket(bucket_id)
 
-    count = max(1, item_count)
+    count = max(0, int(item_count))
     unit_weight_kg = bucket["avg_unit_weight_kg"]
     units_per_1kg = bucket["units_per_1kg"]
 
     estimated_weight_kg = round(count * unit_weight_kg, 3)
+    weight_min_kg = round(estimated_weight_kg * 0.85, 2)
+    weight_max_kg = round(estimated_weight_kg * 1.15, 2)
+
     rate_per_kg = rates["avg_rate"]
-    estimated_naira = max(1, round(estimated_weight_kg * rate_per_kg))
+    estimated_naira = round(estimated_weight_kg * rate_per_kg)
 
     units_needed_for_1kg = max(0, units_per_1kg - count)
     units_for_3kg_pickup = units_per_1kg * 3
@@ -449,18 +659,20 @@ def calculate_waste_valuation(bucket_id: str, item_count: int) -> Dict[str, Any]
     unit_word = bucket["unit_name_singular"] if count == 1 else bucket["unit_name_plural"]
     plural_word = bucket["unit_name_plural"]
 
-    if count < units_per_1kg:
+    if count == 0:
+        guidance_message = "No recyclable items counted yet."
+    elif count < units_per_1kg:
         guidance_message = (
-            f"We detected {count} {unit_word} (~{estimated_weight_kg} kg ≈ ₦{estimated_naira}). "
-            f"About {units_per_1kg} {plural_word} make 1 kg (₦{rate_per_kg}). "
-            f"Add {units_needed_for_1kg} more {plural_word} to reach 1 kg, or "
-            f"{units_needed_for_3kg} more to reach the 3 kg home pickup minimum!"
+            f"Detected {count} {unit_word} (about {weight_min_kg}–{weight_max_kg} kg ≈ ₦{estimated_naira}). "
+            f"Roughly {units_per_1kg} {plural_word} make 1 kg (₦{rate_per_kg}). "
+            f"Add ~{units_needed_for_1kg} more {plural_word} to reach 1 kg, or "
+            f"~{units_needed_for_3kg} more to reach the 3 kg home pickup minimum!"
         )
     else:
         guidance_message = (
-            f"We detected {count} {unit_word} (~{estimated_weight_kg} kg). "
-            f"Since {units_per_1kg} {plural_word} = 1 kg (₦{rate_per_kg}/kg), "
-            f"your estimated payout is ₦{estimated_naira} (range ₦{round(estimated_weight_kg * rates['min_rate'])}–₦{round(estimated_weight_kg * rates['max_rate'])})."
+            f"Detected {count} {unit_word} (about {weight_min_kg}–{weight_max_kg} kg). "
+            f"Since ~{units_per_1kg} {plural_word} = 1 kg (₦{rate_per_kg}/kg), "
+            f"your estimated payout is ₦{estimated_naira}."
         )
 
     return {
@@ -474,6 +686,7 @@ def calculate_waste_valuation(bucket_id: str, item_count: int) -> Dict[str, Any]
         "units_needed_for_1kg": units_needed_for_1kg,
         "units_needed_for_3kg_pickup": units_needed_for_3kg,
         "estimated_weight_kg": estimated_weight_kg,
+        "estimated_weight_range_kg": [weight_min_kg, weight_max_kg],
         "rate_per_kg_naira": rate_per_kg,
         "min_rate_per_kg_naira": rates["min_rate"],
         "max_rate_per_kg_naira": rates["max_rate"],
@@ -483,8 +696,51 @@ def calculate_waste_valuation(bucket_id: str, item_count: int) -> Dict[str, Any]
     }
 
 
+def calculate_multi_bucket_valuation(detections: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """
+    Values EVERY material bucket detected in the photo (e.g. 8 PET bottles + 4 cans together)
+    and aggregates total_kg and total_naira.
+    """
+    bucket_counts: Dict[str, int] = {}
+    for d in detections:
+        b = d.get("bucket_id")
+        if b in NIGERIAN_MATERIAL_BUCKETS:
+            bucket_counts[b] = bucket_counts.get(b, 0) + 1
+
+    items_breakdown = [
+        calculate_waste_valuation(b, cnt) for b, cnt in bucket_counts.items()
+    ]
+    total_kg = round(sum(v["estimated_weight_kg"] for v in items_breakdown), 3)
+    total_naira = sum(v["estimated_payout_naira"] for v in items_breakdown)
+    total_count = sum(v["detected_count"] for v in items_breakdown)
+
+    dominant_bucket = max(bucket_counts, key=bucket_counts.get)
+    primary_val = calculate_waste_valuation(dominant_bucket, bucket_counts[dominant_bucket])
+
+    # Enrich primary valuation with multi-material totals when more than 1 material is present
+    primary_val["items_breakdown"] = items_breakdown
+    primary_val["total_combined_weight_kg"] = total_kg
+    primary_val["total_combined_payout_naira"] = total_naira
+    primary_val["total_combined_count"] = total_count
+    primary_val["kg_needed_for_1kg_total"] = round(max(0.0, 1.0 - total_kg), 2)
+    primary_val["kg_needed_for_3kg_pickup"] = round(max(0.0, 3.0 - total_kg), 2)
+
+    if len(items_breakdown) > 1:
+        summary_parts = [
+            f"{v['detected_count']} {v['unit_label']} ({v['material_name']} · ₦{v['estimated_payout_naira']})"
+            for v in items_breakdown
+        ]
+        primary_val["guidance_message"] = (
+            f"Mixed load detected: {' + '.join(summary_parts)}. "
+            f"Combined weight: ~{round(total_kg * 0.85, 2)}–{round(total_kg * 1.15, 2)} kg "
+            f"(Total est. value: ₦{total_naira})."
+        )
+
+    return primary_val
+
+
 # ============================================================================
-# 5. REST API ENDPOINTS & STANDALONE HTML/JS DEMO APP
+# 6. REST API ENDPOINTS & STANDALONE HTML/JS DEMO APP
 # ============================================================================
 @app.route("/", methods=["GET"])
 def demo_home():
@@ -497,10 +753,15 @@ def health():
     return jsonify(
         {
             "status": "ok",
-            "model_repo": "arnabdhar/YOLOv8-nano-trash-detection",
-            "onnx_loaded": ONNX_SESSION is not None,
-            "onnx_path": str(ONNX_MODEL_PATH),
-            "classes_count": len(MODEL_CLASSES),
+            "instance_model": "muaaaa29/Plastic-Waste-Detection-YOLOv8",
+            "instance_onnx_loaded": INSTANCE_SESSION is not None,
+            "instance_classes": INSTANCE_CLASSES,
+            "material_model": "HrutikAdsare/waste-detection-yolov8",
+            "material_onnx_loaded": MATERIAL_SESSION is not None,
+            "material_classes": MATERIAL_CLASSES,
+            "onnx_loaded": INSTANCE_SESSION is not None,
+            "model_repo": "Paired: muaaaa29 (Instance) + HrutikAdsare (Cans/Glass/Carton)",
+            "classes_count": len(INSTANCE_CLASSES) + len(MATERIAL_CLASSES),
         }
     )
 
@@ -508,63 +769,83 @@ def health():
 @app.route("/api/scan", methods=["POST"])
 def scan_waste():
     """
-    Accepts either:
-      - multipart/form-data with `image` file
-      - JSON with `image_base64` (and optional `fallback_count`, `fallback_bucket`)
-    Returns YOLO detections, bottle/item count, `how many = 1 kg` math, and Naira price estimate.
+    Hardened `/api/scan` endpoint:
+      - Letterboxes uploaded images without squashing aspect ratio
+      - Runs per-class NMS + sequential paired models (Plastic Instance Detector + Can/Material Verifier)
+      - Returns an honest empty result (`valuation: None`) if 0 recyclables are detected in a photo
+      - Values EVERY material bucket detected in mixed photos
+      - Does NOT dump every random scan to disk (vault saves happen selectively in `/api/scan/custom-label`)
     """
     start_ts = time.time()
-    pil_img = None
-    saved_filename = None
+    req_json = request.get_json(silent=True) if request.is_json else {}
+    req_json = req_json or {}
 
-    if "image" in request.files:
-        file_obj = request.files["image"]
-        pil_img = Image.open(file_obj.stream)
-    elif request.is_json:
-        data = request.get_json(silent=True) or {}
-        b64_str = data.get("image_base64", "")
-        if b64_str:
+    # 1. Explicit Math Simulator Mode (only when user clicks a simulator button in UI)
+    if req_json.get("is_simulation"):
+        sim_bucket = req_json.get("fallback_bucket", "pet")
+        sim_count = int(req_json.get("fallback_count", 2))
+        val = calculate_waste_valuation(sim_bucket, sim_count)
+        val["items_breakdown"] = [val.copy()]
+        return jsonify(
+            {
+                "success": True,
+                "is_simulation": True,
+                "inference_time_ms": round((time.time() - start_ts) * 1000, 1),
+                "onnx_active": INSTANCE_SESSION is not None,
+                "detections": [],
+                "valuation": val,
+            }
+        )
+
+    # 2. Real Image Upload (Multipart or Base64 JSON)
+    pil_img = None
+    try:
+        if "image" in request.files:
+            pil_img = load_image_safely(request.files["image"].stream)
+        elif req_json.get("image_base64"):
+            b64_str = req_json["image_base64"]
             if "," in b64_str:
                 b64_str = b64_str.split(",", 1)[1]
             img_bytes = base64.b64decode(b64_str)
-            pil_img = Image.open(io.BytesIO(img_bytes))
+            pil_img = load_image_safely(io.BytesIO(img_bytes))
+        else:
+            return jsonify({"success": False, "error": "No image provided."}), 400
+    except (UnidentifiedImageError, ValueError, OSError) as img_err:
+        return jsonify({"success": False, "error": f"Invalid or corrupt image: {img_err}"}), 400
 
-    detections: List[Dict[str, Any]] = []
-    if pil_img is not None:
-        _, resized_640 = preprocess_image(pil_img)
-        saved_filename = f"scan_{int(time.time() * 1000)}.jpg"
-        resized_640.save(VAULT_DIR / saved_filename, format="JPEG", quality=75)
-        detections = run_yolo_onnx(resized_640)
-
-    # Determine dominant material bucket and item count
-    if detections:
-        bucket_counts: Dict[str, int] = {}
-        for d in detections:
-            b = d["bucket_id"]
-            bucket_counts[b] = bucket_counts.get(b, 0) + 1
-        dominant_bucket = max(bucket_counts, key=bucket_counts.get)
-        total_items = bucket_counts[dominant_bucket]
-        avg_conf = round(
-            sum(d["confidence"] for d in detections) / len(detections), 2
-        )
-    else:
-        req_json = request.get_json(silent=True) or {}
-        dominant_bucket = req_json.get("fallback_bucket", "pet")
-        total_items = int(req_json.get("fallback_count", 2))
-        avg_conf = 0.88
-
-    valuation = calculate_waste_valuation(dominant_bucket, total_items)
+    detections, meta, _ = run_paired_yolo_pipeline(pil_img, conf_thres=0.25)
     elapsed_ms = round((time.time() - start_ts) * 1000, 1)
+
+    # 3. Honest Empty Result when nothing is detected (no fabricated "2 bottles, 88%")
+    if not detections:
+        return jsonify(
+            {
+                "success": True,
+                "inference_time_ms": elapsed_ms,
+                "onnx_active": INSTANCE_SESSION is not None,
+                "image_size": {"width": meta["orig_w"], "height": meta["orig_h"]},
+                "detections": [],
+                "valuation": None,
+                "items_breakdown": [],
+                "message": "No recyclables detected. Try a closer, well-lit photo or enter items manually.",
+            }
+        )
+
+    valuation = calculate_multi_bucket_valuation(detections)
+    avg_conf = round(
+        sum(d["confidence"] for d in detections) / len(detections), 2
+    )
 
     return jsonify(
         {
             "success": True,
             "inference_time_ms": elapsed_ms,
-            "onnx_active": ONNX_SESSION is not None,
+            "onnx_active": INSTANCE_SESSION is not None,
             "confidence": avg_conf,
-            "saved_image": saved_filename,
+            "image_size": {"width": meta["orig_w"], "height": meta["orig_h"]},
             "detections": detections,
             "valuation": valuation,
+            "items_breakdown": valuation.get("items_breakdown", []),
         }
     )
 
@@ -572,22 +853,50 @@ def scan_waste():
 @app.route("/api/scan/custom-label", methods=["POST"])
 def save_custom_nigerian_label():
     """
-    Active-Learning endpoint:
-    When a user enters a custom local Nigerian name (e.g., "Pure water nylon", "Eva rubber",
-    "Maltina pan") and selects the base material bucket + item count:
-      1. Saves/updates the Nigerian name in `nigerian_material_aliases`
-      2. Logs the sample in `training_vault_samples` for future YOLO training
-      3. Returns the updated valuation using their custom Nigerian name!
+    Selective Training Vault & Alias Lookup endpoint:
+      - Only saves images to `training_vault/` when the user explicitly confirms/submits here.
+      - Uses `uuid4().hex` filenames (no timestamp collision risk).
+      - Saves the un-squashed image (downscaled to max 1280px preserving aspect ratio).
+      - Writes normalized YOLO annotations (`class cx cy w h`) to a matching `.txt` file
+        so the vault is immediately ready for YOLOv8 fine-tuning on Colab.
     """
     data = request.get_json(silent=True) or {}
     custom_name = (data.get("custom_name") or "").strip()
     bucket_id = (data.get("bucket_id") or "pet").strip().lower()
-    item_count = int(data.get("item_count") or 2)
-    image_filename = data.get("image_filename") or ""
-    detections_json = json.dumps(data.get("detections") or [])
+    item_count = max(0, int(data.get("item_count") or 1))
+    user_consent = bool(data.get("user_consent", True))
+    detections = data.get("detections") or []
+    b64_str = data.get("image_base64") or ""
 
     if bucket_id not in NIGERIAN_MATERIAL_BUCKETS:
         bucket_id = "pet"
+
+    sample_uuid = uuid.uuid4().hex
+    image_filename = ""
+    yolo_txt_filename = ""
+
+    # Save un-squashed image (max 1280px) + normalized YOLO .txt labels ONLY if user consented & sent image
+    if user_consent and b64_str:
+        try:
+            if "," in b64_str:
+                b64_str = b64_str.split(",", 1)[1]
+            pil_img = load_image_safely(io.BytesIO(base64.b64decode(b64_str)))
+            pil_img.thumbnail((1280, 1280), Image.Resampling.BILINEAR)
+            image_filename = f"vault_{sample_uuid}.jpg"
+            pil_img.save(VAULT_DIR / image_filename, format="JPEG", quality=82)
+
+            # Write normalized YOLO .txt annotation file (class_id cx cy w h)
+            yolo_txt_filename = f"vault_{sample_uuid}.txt"
+            target_cls_idx = BUCKET_INDEX_FOR_YOLO_TXT.get(bucket_id, 0)
+            yolo_lines = []
+            for d in detections:
+                yn = d.get("yolo_norm")
+                if yn and len(yn) == 5:
+                    yolo_lines.append(f"{target_cls_idx} {yn[1]} {yn[2]} {yn[3]} {yn[4]}")
+            with open(VAULT_DIR / yolo_txt_filename, "w", encoding="utf-8") as tf:
+                tf.write("\n".join(yolo_lines))
+        except Exception as err:
+            print(f"[!] Vault image save skipped: {err}")
 
     conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
@@ -601,29 +910,33 @@ def save_custom_nigerian_label():
                 usage_count = usage_count + 1,
                 bucket_id = excluded.bucket_id
             """,
-            (custom_name, bucket_id, datetime.utcnow().isoformat()),
+            (custom_name, bucket_id, now_utc_iso()),
         )
 
     valuation = calculate_waste_valuation(bucket_id, item_count)
+    valuation["items_breakdown"] = [valuation.copy()]
 
     cur.execute(
         """
         INSERT INTO training_vault_samples (
-            image_filename, yolo_raw_detections, user_custom_name,
-            bucket_id, estimated_count, estimated_weight_kg, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?)
+            sample_uuid, image_filename, yolo_txt_filename, yolo_raw_detections,
+            user_custom_name, bucket_id, estimated_count, estimated_weight_kg,
+            user_consent, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
+            sample_uuid,
             image_filename,
-            detections_json,
+            yolo_txt_filename,
+            json.dumps(detections),
             custom_name or valuation["material_name"],
             bucket_id,
             item_count,
             valuation["estimated_weight_kg"],
-            datetime.utcnow().isoformat(),
+            1 if user_consent else 0,
+            now_utc_iso(),
         ),
     )
-    sample_id = cur.lastrowid
     conn.commit()
     conn.close()
 
@@ -633,17 +946,45 @@ def save_custom_nigerian_label():
     return jsonify(
         {
             "success": True,
-            "training_sample_id": sample_id,
+            "sample_uuid": sample_uuid,
+            "saved_image": image_filename,
+            "saved_yolo_txt": yolo_txt_filename,
             "learned_custom_name": custom_name,
             "valuation": valuation,
-            "message": f"Learned '{custom_name}' under {valuation['material_name']} and saved to training vault.",
+            "message": (
+                f"Saved '{custom_name or valuation['material_name']}' to alias lookup & "
+                f"YOLO training vault ({sample_uuid[:8]})."
+            ),
         }
     )
 
 
+@app.route("/api/scan/verify-scale-weight", methods=["POST"])
+def verify_scale_weight():
+    """
+    When a recycler weighs the pickup on their calibrated physical scale, records
+    `verified_scale_weight_kg` against the scan sample so EcoSmart can calibrate
+    `avg_unit_weight_kg` against real-world scale weights.
+    """
+    data = request.get_json(silent=True) or {}
+    sample_uuid = (data.get("sample_uuid") or "").strip()
+    scale_kg = float(data.get("verified_scale_weight_kg") or 0.0)
+    if not sample_uuid or scale_kg <= 0:
+        return jsonify({"success": False, "error": "sample_uuid and verified_scale_weight_kg > 0 required"}), 400
+
+    conn = sqlite3.connect(DB_PATH)
+    cur = conn.cursor()
+    cur.execute(
+        "UPDATE training_vault_samples SET verified_scale_weight_kg = ? WHERE sample_uuid = ?",
+        (scale_kg, sample_uuid),
+    )
+    conn.commit()
+    conn.close()
+    return jsonify({"success": True, "sample_uuid": sample_uuid, "verified_scale_weight_kg": scale_kg})
+
+
 @app.route("/api/scan/aliases", methods=["GET"])
 def list_learned_aliases():
-    """Returns popular Nigerian waste names learned from users."""
     conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
     cur.execute(
@@ -664,7 +1005,6 @@ def list_learned_aliases():
 
 @app.route("/api/market-rates", methods=["GET", "POST"])
 def market_rates_api():
-    """Gets or updates Kubwa guide prices (used by the Admin Portal -> Market rates screen)."""
     conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
 
@@ -680,7 +1020,7 @@ def market_rates_api():
             SET min_rate = ?, max_rate = ?, avg_rate = ?, updated_at = ?
             WHERE bucket_id = ?
             """,
-            (min_r, max_r, avg_r, datetime.utcnow().isoformat(), b_id),
+            (min_r, max_r, avg_r, now_utc_iso(), b_id),
         )
         conn.commit()
 
@@ -700,4 +1040,5 @@ def market_rates_api():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    dev_debug = os.environ.get("FLASK_DEBUG", "1") == "1"
+    app.run(host="0.0.0.0", port=5000, debug=dev_debug)
